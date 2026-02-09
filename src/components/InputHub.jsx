@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { fileToBase64 } from '../services/aiService';
 import {
     Upload as UploadIcon,
     FileText,
@@ -19,13 +20,42 @@ const InputHub = ({ onGenerate }) => {
         if (e.target.files[0]) setFile(e.target.files[0]);
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         setIsLoading(true);
-        // Simulate AI processing
-        setTimeout(() => {
+
+        try {
+            let payload = {};
+
+            // CASE 1: PDF Upload
+            if (activeTab === 'pdf' && file) {
+                const base64 = await fileToBase64(file);
+                payload = { type: 'pdf', content: base64, mimeType: file.type };
+            }
+            // CASE 2: Raw Notes
+            else if (activeTab === 'notes' && notes) {
+                payload = { type: 'text', content: notes };
+            }
+            // CASE 3: YouTube Video
+            else if (activeTab === 'video' && videoUrl) {
+                // Pass the URL as text context for the AI
+                payload = {
+                    type: 'text',
+                    content: `Analyze the educational content of the video at this URL: ${videoUrl}. Generate a study plan, summary, and quiz for the likely topic of this video.`
+                };
+            }
+
+            // Send data back to App parent
+            if (payload.content) {
+                // We await a bit to ensure UI updates, then pass payload
+                await onGenerate(payload);
+            }
+
+        } catch (error) {
+            console.error("Input processing error:", error);
+            alert("Error processing file. Please try again.");
+        } finally {
             setIsLoading(false);
-            onGenerate();
-        }, 2500);
+        }
     };
 
     const isReady = () => {
