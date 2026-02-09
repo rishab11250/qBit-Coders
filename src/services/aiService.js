@@ -122,3 +122,70 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
     return null;
   }
 }
+
+/**
+ * Sends a chat message to the AI, maintaining context of the study material.
+ * 
+ * @param {Array} history - Array of { role: 'user' | 'model', parts: [{ text: string }] }
+ * @param {string} newMessage - The user's new question
+ * @param {Object} context - { pdfBase64, extractedText, notes } to provide context
+ */
+export async function sendChatMessage(history, newMessage, context) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  // 1. Build the system instruction / context
+  let contextPrompt = "You are a helpful study tutor. Answer questions based on the provided study material.";
+
+  if (context.extractedText) {
+    contextPrompt += `\n\nStudy Material Context:\n${context.extractedText.substring(0, 30000)}...`; // Limit context size
+  } else if (context.notes) {
+    contextPrompt += `\n\nNotes Context:\n${context.notes}`;
+  }
+
+  // 2. Format history for Gemini API (user/model roles)
+  // The store uses 'ai', Gemini uses 'model'. We map it here.
+  const formattedHistory = history.map(msg => ({
+    role: msg.role === 'ai' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+
+  // 3. Add the initial context as a system instruction (or just the first user message for Flash model)
+  // Gemini 1.5 Flash supports system instructions, but for simplicity/robustness with older keys,
+  // we can prepend it to the first message or send it as a separate block.
+  // For chat, it's best to start a session.
+
+  try {
+    const payload = {
+      contents: [
+        ...formattedHistory,
+        { role: 'user', parts: [{ text: `${contextPrompt}\n\nStudent Question: ${newMessage}` }] }
+      ]
+    };
+
+    // If there is a PDF, we might need to send it again if it's not "cached" in the chat session.
+    // But Gemini 1.5 is stateless via REST unless using the specialized ChatSession object.
+    // To keep it simple for this "Logic Domain" task:
+    // We attach the PDF data to the LATEST message if it's the FIRST message, or relies on text context.
+    // Optimization: For now, we rely on the text context extracted earlier. 
+    // If we want full PDF chat, we'd need to re-send the inlineData every time or use the File API.
+    // Let's stick to text context for the "Logic MVP" as requested.
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) throw new Error("Chat Loop Failed");
+
+    const data = await response.json();
+    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate an answer.";
+
+    return answer;
+
+  } catch (error) {
+    console.error("Chat Error:", error);
+    return "Sorry, I'm having trouble connecting to the tutor right now.";
+  }
+}

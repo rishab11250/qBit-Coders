@@ -17,6 +17,10 @@ const useStudyStore = create(
             quiz: [],
             weakAreas: [],
 
+            // Chat State (Logic Domain)
+            chatHistory: [], // Array of { role: 'user' | 'ai', content: string }
+            isChatLoading: false,
+
             // UI State
             isLoading: false,
             error: null,
@@ -56,6 +60,12 @@ const useStudyStore = create(
             setError: (error) => set({ error }),
             setStep: (step) => set({ currentStep: step }),
 
+            // Chat Actions
+            addChatMessage: (message) => set((state) => ({
+                chatHistory: [...state.chatHistory, message]
+            })),
+            setChatLoading: (isLoading) => set({ isChatLoading: isLoading }),
+
             updateSettings: (newSettings) => set((state) => ({
                 settings: { ...state.settings, ...newSettings }
             })),
@@ -69,6 +79,7 @@ const useStudyStore = create(
                 topics: [],
                 concepts: [],
                 quiz: [],
+                chatHistory: [],
                 currentStep: 'input',
                 error: null
             })
@@ -87,6 +98,7 @@ const useStudyStore = create(
                 concepts: state.concepts,
                 quiz: state.quiz,
                 weakAreas: state.weakAreas,
+                chatHistory: state.chatHistory, // Persist chat
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
