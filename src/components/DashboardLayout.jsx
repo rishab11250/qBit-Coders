@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import QuizInteractive from './QuizInteractive';
 import WeakAnalysis from './WeakAnalysis';
+import ConceptGraph from './ConceptGraph';
 
 const DashboardLayout = ({ data, onRetry }) => {
     const [activeView, setActiveView] = useState('summary');
@@ -27,20 +28,9 @@ const DashboardLayout = ({ data, onRetry }) => {
                 );
             case 'concepts':
                 return (
-                    <div className="card animate-fade-in">
-                        <h2 className="section-header">Concept Graph</h2>
-                        <div className="topic-list-simple">
-                            {data.concepts.map((concept, i) => (
-                                <div key={i} className="concept-item">
-                                    <h3>{concept.name}</h3>
-                                    <div className="related-tags">
-                                        {concept.related.map((tag, j) => (
-                                            <span key={j} className="tag">{tag}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    <div className="card animate-fade-in" style={{ height: '450px', padding: 0, overflow: 'hidden', position: 'relative' }}>
+                        <h2 className="section-header" style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, pointerEvents: 'none' }}>Concept Map</h2>
+                        <ConceptGraph concepts={data.concepts} />
                     </div>
                 );
             case 'quiz':
