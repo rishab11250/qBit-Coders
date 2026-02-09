@@ -3,7 +3,7 @@ import { FileText, Share2, AlertTriangle, HelpCircle } from 'lucide-react';
 import useStudyStore from '../../store/useStudyStore';
 import QuizInteractive from '../QuizInteractive';
 import Button from '../ui/Button';
-import ConceptGraph from '../../ConceptGraph';
+import ConceptGraph from '../ConceptGraph';
 
 const DashboardLayout = () => {
     const { summary, concepts, quiz, weakAreas, addWeakArea, reset } = useStudyStore();
