@@ -1,13 +1,14 @@
 :root {
   --primary: #4F46E5;
   --primary-hover: #4338CA;
+  --secondary: #64748B;
   --bg: #F8FAFC;
   --surface: #FFFFFF;
   --text: #1E293B;
   --text-muted: #64748B;
   --border: #E2E8F0;
   --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --radius: 16px;
+  --radius: 12px;
   --font: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -50,38 +51,30 @@ body {
 
 .content {
   flex: 1;
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 4rem 1.5rem;
   width: 100%;
 }
 
-.upload-section {
+/* Upload Component */
+.upload-container {
   text-align: center;
+  animation: fadeIn 0.5s ease;
 }
 
-h1 {
-  font-size: 3rem;
+.main-title {
+  font-size: 2.5rem;
   font-weight: 800;
-  margin-bottom: 1rem;
-  letter-spacing: -0.02em;
-}
-
-.highlight {
-  color: var(--primary);
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 1.25rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
+  color: var(--text);
 }
 
 .dropzone {
   background: var(--surface);
   border: 2px dashed var(--border);
   border-radius: var(--radius);
-  padding: 4rem 2rem;
+  padding: 3rem;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 2rem;
@@ -90,13 +83,13 @@ h1 {
 
 .dropzone:hover {
   border-color: var(--primary);
-  background: #F5F3FF;
+  background: #EFF6FF;
 }
 
 .dropzone.has-file {
   border-style: solid;
   border-color: var(--primary);
-  background: #EEF2FF;
+  background: #F0F9FF;
 }
 
 .dropzone input {
@@ -108,26 +101,28 @@ h1 {
 
 .upload-icon {
   color: var(--primary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .success-icon {
   color: #10B981;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .file-info p {
   font-weight: 600;
 }
 
-.file-size {
-  font-size: 0.875rem;
+.file-hint {
+  display: block;
+  margin-top: 0.5rem;
   color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .btn {
   padding: 0.875rem 2rem;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -145,22 +140,83 @@ h1 {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-.btn-generate {
-  min-width: 240px;
-  justify-content: center;
+.btn-secondary {
+  background: #E2E8F0;
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: #CBD5E1;
 }
 
 .spin {
   animation: spin 1s linear infinite;
+}
+
+/* Dashboard Component */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.section-header {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.summary-text {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.topic-list-simple {
+  padding-left: 1.5rem;
+}
+
+.topic-list-simple li {
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.quiz-list-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.quiz-item-simple {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.quiz-item-simple:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.quiz-item-simple p {
+  margin-bottom: 0.5rem;
 }
 
 @keyframes spin {
@@ -171,93 +227,6 @@ h1 {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* Dashboard Styles */
-.dashboard-view {
-  animation: fadeIn 0.5s ease;
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.btn-back {
-  background: none;
-  border: none;
-  color: var(--primary);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 1.5rem;
-}
-
-.card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 2rem;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  color: var(--primary);
-}
-
-.summary-section p {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-}
-
-.topic-list {
-  list-style: none;
-}
-
-.topic-list li {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-  font-weight: 500;
-}
-
-.topic-list li:last-child {
-  border-bottom: none;
-}
-
-.quiz-section {
-  grid-column: 1 / -1;
-}
-
-.quiz-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.quiz-item {
-  background: var(--bg);
-  padding: 1.5rem;
-  border-radius: 12px;
-}
-
-.question {
-  margin-bottom: 0.75rem;
-  color: var(--text);
-}
-
-.answer {
-  color: var(--text-muted);
 }
 
 @keyframes fadeIn {
@@ -272,12 +241,6 @@ h1 {
   }
 }
 
-@media (max-width: 768px) {
-  h1 {
-    font-size: 2.25rem;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+.mt-4 {
+  margin-top: 2rem;
 }
