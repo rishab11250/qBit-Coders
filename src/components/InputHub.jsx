@@ -1,65 +1,57 @@
 import React, { useState } from 'react';
-import { fileToBase64 } from '../services/aiService';
 import {
     Upload as UploadIcon,
     FileText,
     Youtube,
-    Loader2,
     CheckCircle2,
     ChevronRight
 } from 'lucide-react';
+import useStudyStore from '../store/useStudyStore';
+import { extractTextFromPDF } from '../services/pdfService';
+import Button from './ui/Button';
+import Loader from './ui/Loader';
+import ErrorMessage from './ui/ErrorMessage';
 
 const InputHub = ({ onGenerate }) => {
-    const [activeTab, setActiveTab] = useState('pdf'); // 'pdf', 'notes', 'video'
-    const [file, setFile] = useState(null);
-    const [notes, setNotes] = useState('');
-    const [videoUrl, setVideoUrl] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const {
+        setPdfFile, setExtractedText,
+        notes, setNotes,
+        videoUrl, setVideoUrl,
+        isLoading, setLoading,
+        error, setError
+    } = useStudyStore();
 
-    const handleFileChange = (e) => {
-        if (e.target.files[0]) setFile(e.target.files[0]);
-    };
+    const [activeTab, setActiveTab] = useState('pdf');
+    const [localFile, setLocalFile] = useState(null);
 
-    const handleGenerate = async () => {
-        setIsLoading(true);
-
-        try {
-            let payload = {};
-
-            // CASE 1: PDF Upload
-            if (activeTab === 'pdf' && file) {
-                const base64 = await fileToBase64(file);
-                payload = { type: 'pdf', content: base64, mimeType: file.type };
-            }
-            // CASE 2: Raw Notes
-            else if (activeTab === 'notes' && notes) {
-                payload = { type: 'text', content: notes };
-            }
-            // CASE 3: YouTube Video
-            else if (activeTab === 'video' && videoUrl) {
-                // Pass the URL as text context for the AI
-                payload = {
-                    type: 'text',
-                    content: `Analyze the educational content of the video at this URL: ${videoUrl}. Generate a study plan, summary, and quiz for the likely topic of this video.`
-                };
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                setError("Only PDF files are supported.");
+                return;
             }
 
-            // Send data back to App parent
-            if (payload.content) {
-                // We await a bit to ensure UI updates, then pass payload
-                await onGenerate(payload);
-            }
+            setLocalFile(file);
+            setPdfFile(file);
+            setLoading(true);
+            setError(null);
 
-        } catch (error) {
-            console.error("Input processing error:", error);
-            alert("Error processing file. Please try again.");
-        } finally {
-            setIsLoading(false);
+            try {
+                const { text, pages } = await extractTextFromPDF(file);
+                setExtractedText(text);
+                console.log(`Extracted ${text.length} characters from ${pages} pages.`);
+            } catch (err) {
+                setError(err.message);
+                setLocalFile(null);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
     const isReady = () => {
-        if (activeTab === 'pdf') return !!file;
+        if (activeTab === 'pdf') return !!localFile;
         if (activeTab === 'notes') return notes.length > 20;
         if (activeTab === 'video') return videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
         return false;
@@ -92,16 +84,36 @@ const InputHub = ({ onGenerate }) => {
                     </button>
                 </div>
 
-                <div className="hub-content">
+                <div className="hub-content relative min-h-[300px]">
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center backdrop-blur-sm rounded-lg">
+                            <Loader text="Processing Content..." />
+                        </div>
+                    )}
+
+                    {error && (
+                        <ErrorMessage
+                            message={error}
+                            onDismiss={() => setError(null)}
+                            className="mb-4"
+                        />
+                    )}
+
                     {activeTab === 'pdf' && (
-                        <div className={`dropzone ${file ? 'has-file' : ''}`}>
-                            <input type="file" accept=".pdf" onChange={handleFileChange} id="pdf-upload" />
-                            <label htmlFor="pdf-upload">
-                                {file ? (
+                        <div className={`dropzone ${localFile ? 'has-file' : ''}`}>
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                onChange={handleFileChange}
+                                id="pdf-upload"
+                                disabled={isLoading}
+                            />
+                            <label htmlFor="pdf-upload" className="w-full h-full flex flex-col items-center justify-center">
+                                {localFile ? (
                                     <div className="file-info">
                                         <CheckCircle2 size={40} className="success-icon" />
-                                        <p>{file.name}</p>
-                                        <span className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                                        <p>{localFile.name}</p>
+                                        <span className="file-size">{(localFile.size / 1024 / 1024).toFixed(2)} MB</span>
                                     </div>
                                 ) : (
                                     <>
@@ -137,22 +149,16 @@ const InputHub = ({ onGenerate }) => {
                 </div>
 
                 <div className="hub-footer">
-                    <button
-                        className="btn btn-primary btn-lg btn-full"
-                        onClick={handleGenerate}
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full"
+                        onClick={onGenerate}
                         disabled={!isReady() || isLoading}
+                        isLoading={isLoading}
                     >
-                        {isLoading ? (
-                            <>
-                                <Loader2 size={20} className="spin" />
-                                Analyzing Content with AI...
-                            </>
-                        ) : (
-                            <>
-                                Generate Study Plan <ChevronRight size={20} />
-                            </>
-                        )}
-                    </button>
+                        Generate Study Plan <ChevronRight size={20} className="ml-2" />
+                    </Button>
                 </div>
             </div>
         </div>
