@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { fileToBase64 } from '../services/aiService';
+import { processStudyFile } from '../utils/filePipeline'; // Import the pipeline
 import {
     Upload as UploadIcon,
     FileText,
@@ -15,6 +15,7 @@ const InputHub = ({ onGenerate }) => {
     const [notes, setNotes] = useState('');
     const [videoUrl, setVideoUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("Analyzing Content with AI...");
 
     const handleFileChange = (e) => {
         if (e.target.files[0]) setFile(e.target.files[0]);
@@ -22,14 +23,30 @@ const InputHub = ({ onGenerate }) => {
 
     const handleGenerate = async () => {
         setIsLoading(true);
+        setStatusMessage("Processing file..."); // Initial loading state
 
         try {
             let payload = {};
 
-            // CASE 1: PDF Upload
+            // CASE 1: PDF/File Upload
             if (activeTab === 'pdf' && file) {
-                const base64 = await fileToBase64(file);
-                payload = { type: 'pdf', content: base64, mimeType: file.type };
+                console.log("📄 Extracting text...");
+                const { rawText, chunks } = await processStudyFile(file);
+
+                console.log(`✂️ Chunks created: ${chunks.length}`);
+
+                if (!rawText) {
+                    throw new Error("Failed to extract text from file.");
+                }
+
+                console.log("🧠 Sending to AI...");
+                setStatusMessage("Analyzing Content with AI..."); // Update status before sending
+
+                // Send chunks joined by newline as text content
+                payload = {
+                    type: 'text',
+                    content: chunks.join("\n")
+                };
             }
             // CASE 2: Raw Notes
             else if (activeTab === 'notes' && notes) {
@@ -55,6 +72,7 @@ const InputHub = ({ onGenerate }) => {
             alert("Error processing file. Please try again.");
         } finally {
             setIsLoading(false);
+            setStatusMessage("Analyzing Content with AI..."); // Reset status
         }
     };
 
@@ -145,7 +163,7 @@ const InputHub = ({ onGenerate }) => {
                         {isLoading ? (
                             <>
                                 <Loader2 size={20} className="spin" />
-                                Analyzing Content with AI...
+                                {statusMessage}
                             </>
                         ) : (
                             <>
