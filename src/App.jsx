@@ -1,81 +1,86 @@
-import React, { useState } from 'react';
-import { Zap } from 'lucide-react';
+import React from 'react';
+import useStudyStore from './store/useStudyStore';
+import Navbar from './components/layout/Navbar';
 import InputHub from './components/InputHub';
-import DashboardLayout from './components/DashboardLayout';
-import { generateStudyContent } from './services/aiService';
-import './App.css';
+import DashboardLayout from './components/features/DashboardLayout';
+import { generateStudyContent, fileToBase64 } from './services/aiService';
 
 const App = () => {
-  // FORCE DASHBOARD OPEN FOR TESTING
-  const [showDashboard, setShowDashboard] = useState(true);
+  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError } = useStudyStore();
 
-  // HARDCODED TEST DATA
-  const [studyData, setStudyData] = useState({
-    summary: "Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy. The process takes place in the chloroplasts, specifically using chlorophyll. The general equation is: 6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2.",
-    topics: [
-      "Photosynthesis",
-      "Calvin Cycle",
-      "Chloroplasts",
-      "ATP Production"
-    ],
-    concepts: [
-      { name: "Photosynthesis", related: ["Light-dependent", "Calvin Cycle", "Chloroplasts"] },
-      { name: "Light-dependent", related: ["Thylakoid", "ATP", "NADPH", "Sunlight"] },
-      { name: "Calvin Cycle", related: ["Stroma", "Glucose", "Carbon Fixation"] },
-      { name: "Chloroplasts", related: ["Chlorophyll", "Plant Cells"] }
-    ],
-    quiz: [
-      {
-        question: "Where does the Calvin Cycle take place?",
-        answer: "In the stroma of the chloroplast.",
-        topic: "Calvin Cycle"
-      },
-      {
-        question: "What are the primary products of the light-dependent reactions?",
-        answer: "ATP and NADPH (and Oxygen as a byproduct).",
-        topic: "Light-dependent"
-      },
-      {
-        question: "Which pigment is primarily responsible for absorbing sunlight?",
-        answer: "Chlorophyll.",
-        topic: "Chloroplasts"
+  const handleGenerate = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      let result;
+
+      // 1. PDF File (Multimodal)
+      if (pdfFile) {
+        console.log("Generating from PDF File...");
+        const base64 = await fileToBase64(pdfFile);
+        result = await generateStudyContent('pdf', base64, pdfFile.type);
       }
-    ]
-  });
+      // 2. Extracted Text (from Pipeline if PDF text only is preferred, or fallback)
+      else if (extractedText && extractedText.length > 0) {
+        console.log("Generating from Extracted Text...");
+        result = await generateStudyContent('text', extractedText);
+      }
+      // 3. Raw Notes
+      else if (notes && notes.length > 0) {
+        console.log("Generating from Notes...");
+        result = await generateStudyContent('text', notes);
+      }
+      // 4. Video URL
+      else if (videoUrl) {
+        console.log("Generating from Video URL...");
+        const prompt = `Analyze the educational content of this video: ${videoUrl}. Generate a study plan, summary, and quiz.`;
+        result = await generateStudyContent('text', prompt);
+      }
 
-  const handleGenerateStudyPlan = async (payload) => {
-    // Note: InputHub handles the loading state
-    const result = await generateStudyContent(
-      payload.type,
-      payload.content,
-      payload.mimeType
-    );
+      if (result) {
+        // Ensure result has all fields to prevent UI errors
+        const safeResult = {
+          summary: result.summary || "No summary available.",
+          topics: result.topics || [],
+          concepts: result.concepts || [],
+          quiz: result.quiz || []
+        };
+        setStudyData(safeResult);
+      } else {
+        throw new Error("AI returned empty result.");
+      }
 
-    if (result) {
-      setStudyData(result);
-      setShowDashboard(true);
+    } catch (e) {
+      console.error("Geneation Failed:", e);
+      setError("Failed to generate content. Please try again or check your API key.");
+    } finally {
+      // Loading is set to false by setStudyData or we do it here if error
+      // But setStudyData sets loading to false. 
+      // If error, we strictly set it to false.
+      // We can't check store state easily here, so calling setLoading(false) is safe if setStudyData wasn't called.
+      // Actually setStudyData handles it. If error, we need to manually turn off loading.
+      // Let's do it conditionally or just rely on the store update if success.
     }
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="logo">
-          <Zap size={24} className="logo-icon" />
-          <span>StudyFlow AI</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+      <Navbar />
 
-      <main className="content">
-        {!showDashboard ? (
-          <InputHub onGenerate={handleGenerateStudyPlan} />
+      <main className="flex-1 pt-16">
+        {currentStep === 'input' ? (
+          <InputHub onGenerate={handleGenerate} />
         ) : (
-          <DashboardLayout
-            data={studyData}
-            onRetry={() => setShowDashboard(false)}
-          />
+          <DashboardLayout />
         )}
       </main>
+
+      <footer className="bg-white border-t border-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-6 text-center text-gray-400 text-sm">
+          <p>© 2024 StudyFlow AI. Built for qBit-Coders.</p>
+        </div>
+      </footer>
     </div>
   );
 };
