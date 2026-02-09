@@ -1,83 +1,87 @@
 import React, { useState } from 'react';
-import { Eye, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
 
-const QuizInteractive = ({ quizData, onWeakTopicDetected }) => {
-    const [revealed, setRevealed] = useState({});
-    const [answered, setAnswered] = useState({});
+const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
+    const [revealedAnswers, setRevealedAnswers] = useState({});
+    const [grades, setGrades] = useState({});
 
     const toggleReveal = (index) => {
-        setRevealed(prev => ({ ...prev, [index]: !prev[index] }));
+        setRevealedAnswers(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
     };
 
-    const handleResponse = (index, isCorrect, topic) => {
-        if (answered[index]) return; // Prevent changing answer
-        setAnswered(prev => ({ ...prev, [index]: isCorrect ? 'correct' : 'incorrect' }));
+    const handleGrade = (index, isCorrect, topic) => {
+        setGrades(prev => ({
+            ...prev,
+            [index]: isCorrect ? 'correct' : 'incorrect'
+        }));
 
-        if (!isCorrect) {
+        if (!isCorrect && topic) {
             onWeakTopicDetected(topic);
         }
     };
 
+    if (!quizData || quizData.length === 0) {
+        return <p className="text-slate-500 italic text-center py-8">No quiz questions available.</p>;
+    }
+
     return (
-        <div className="quiz-container">
-            <h2 className="section-header">Knowledge Check</h2>
-            <div className="quiz-list-interactive">
-                {quizData.map((item, index) => (
-                    <div key={index} className="quiz-card card">
-                        <div className="quiz-question">
-                            <span className="q-number">Q{index + 1}</span>
-                            <p>{item.question}</p>
-                        </div>
+        <div className="space-y-6">
+            {quizData.map((item, index) => (
+                <div key={index} className="p-6 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                        <h4 className="font-medium text-slate-900 text-lg leading-snug">{item.question}</h4>
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap px-2 py-1 bg-slate-100 rounded">
+                            {item.topic}
+                        </span>
+                    </div>
 
-                        <div className="quiz-actions">
-                            {!revealed[index] ? (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => toggleReveal(index)}
-                                >
-                                    <Eye size={16} /> Show Answer
-                                </button>
+                    {!revealedAnswers[index] ? (
+                        <button
+                            onClick={() => toggleReveal(index)}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors font-medium text-sm"
+                        >
+                            <Eye size={16} /> Show Answer
+                        </button>
+                    ) : (
+                        <div className="animate-fade-in">
+                            <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100 mb-4">
+                                <p className="text-indigo-900 font-medium">{item.answer}</p>
+                            </div>
+
+                            {!grades[index] ? (
+                                <div className="flex items-center justify-between gap-4">
+                                    <p className="text-sm text-slate-500 font-medium">Did you get it right?</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleGrade(index, true, item.topic)}
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 text-sm font-semibold transition-colors"
+                                        >
+                                            <CheckCircle size={16} /> Yes
+                                        </button>
+                                        <button
+                                            onClick={() => handleGrade(index, false, item.topic)}
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-semibold transition-colors"
+                                        >
+                                            <XCircle size={16} /> No
+                                        </button>
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="answer-reveal animate-fade-in">
-                                    <p className="answer-text"><strong>Answer:</strong> {item.answer}</p>
-
-                                    {!answered[index] && (
-                                        <div className="self-grade">
-                                            <span className="grade-label">Did you get it right?</span>
-                                            <div className="grade-buttons">
-                                                <button
-                                                    className="btn btn-success btn-sm"
-                                                    onClick={() => handleResponse(index, true, item.topic)}
-                                                >
-                                                    <CheckCircle size={16} /> Yes
-                                                </button>
-                                                <button
-                                                    className="btn btn-danger btn-sm"
-                                                    onClick={() => handleResponse(index, false, item.topic)}
-                                                >
-                                                    <XCircle size={16} /> No
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {answered[index] === 'correct' && (
-                                        <div className="feedback correct">
-                                            <CheckCircle size={16} /> Great job!
-                                        </div>
-                                    )}
-
-                                    {answered[index] === 'incorrect' && (
-                                        <div className="feedback incorrect">
-                                            <XCircle size={16} /> Marked for review.
-                                        </div>
+                                <div className={`flex items-center gap-2 text-sm font-bold ${grades[index] === 'correct' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {grades[index] === 'correct' ? (
+                                        <><CheckCircle size={18} /> Correct</>
+                                    ) : (
+                                        <><XCircle size={18} /> Incorrect (Topic flagged)</>
                                     )}
                                 </div>
                             )}
                         </div>
-                    </div>
-                ))}
-            </div>
+                    )}
+                </div>
+            ))}
         </div>
     );
 };
