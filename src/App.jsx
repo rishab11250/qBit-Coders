@@ -9,22 +9,7 @@ const App = () => {
   const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError } = useStudyStore();
 
   // DEBUG: Seed dummy data for immediate UI testing
-  useEffect(() => {
-    setStudyData({
-      summary: "Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy. The process takes place in the chloroplasts, specifically using chlorophyll. The general equation is: 6CO2 + 6H2O + Light Energy → C6H12O6 + 6O2.",
-      topics: ["Photosynthesis", "Calvin Cycle", "Chloroplasts", "ATP Production"],
-      concepts: [
-        { name: "Photosynthesis", related: ["Light-dependent", "Calvin Cycle", "Chloroplasts"] },
-        { name: "Light-dependent", related: ["Thylakoid", "ATP", "NADPH", "Sunlight"] },
-        { name: "Calvin Cycle", related: ["Stroma", "Glucose", "Carbon Fixation"] },
-        { name: "Chloroplasts", related: ["Chlorophyll", "Plant Cells"] }
-      ],
-      quiz: [
-        { question: "Where does the Calvin Cycle take place?", answer: "In the stroma of the chloroplast.", topic: "Calvin Cycle" },
-        { question: "What are the primary products of the light-dependent reactions?", answer: "ATP and NADPH (and Oxygen as a byproduct).", topic: "Light-dependent" }
-      ]
-    });
-  }, []);
+  // useEffect removed for production AI integration
 
   const handleGenerate = async () => {
     setLoading(true);
