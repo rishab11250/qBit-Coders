@@ -1,5 +1,5 @@
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 /**
  * Generates study content from the provided text using Gemini API.
@@ -10,10 +10,21 @@ export async function generateStudyContent(text) {
   let apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!apiKey) {
-    apiKey = prompt("Please enter your Gemini API Key:");
-    if (!apiKey) {
-      throw new Error("API Key is required to generate study content.");
-    }
+    console.warn("VITE_GEMINI_API_KEY is not set in environment variables.");
+    // Fallback for dev testing if env var is missing
+    apiKey = prompt("Enter Gemini API Key (or set VITE_GEMINI_API_KEY in .env):");
+  }
+
+  // Default empty structure
+  const emptyData = {
+    summary: "",
+    topics: [],
+    quiz: []
+  };
+
+  if (!apiKey) {
+    console.error("API Key is missing.");
+    return emptyData;
   }
 
   const promptText = `
@@ -53,31 +64,25 @@ export async function generateStudyContent(text) {
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Gemini API Error: ${response.statusText}`);
     }
 
     const data = await response.json();
     const candidate = data.candidates?.[0];
-    
+
     if (!candidate || !candidate.content || !candidate.content.parts || !candidate.content.parts.length) {
-        throw new Error("No content generated from Gemini API.");
+      throw new Error("No content generated from Gemini API.");
     }
 
     const textResponse = candidate.content.parts[0].text;
-    
-    // Clean up potential markdown formatting if the model disregards instructions
+
+    // Clean up potential markdown formatting
     const cleanJson = textResponse.replace(/^```json\s*/, "").replace(/\s*```$/, "");
 
-    try {
-        return JSON.parse(cleanJson);
-    } catch (parseError) {
-        console.error("Failed to parse JSON response:", textResponse);
-        throw new Error("Failed to parse AI response as JSON.");
-    }
+    return JSON.parse(cleanJson);
 
   } catch (error) {
     console.error("Error generating study content:", error);
-    throw error;
+    return emptyData;
   }
 }
