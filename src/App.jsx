@@ -14,6 +14,22 @@ const App = () => {
     document.body.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
 
+  // [NEW] Persist Scroll Position
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem('scrollPosition', window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('scrollPosition');
+    if (savedScroll) {
+      window.scrollTo(0, parseInt(savedScroll));
+    }
+  }, [currentStep]); // Restore when step changes or on load
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);

@@ -1,5 +1,6 @@
 import useStudyStore from '../../store/useStudyStore';
 import { Zap, Sun, Moon } from 'lucide-react';
+import BrowserInfoButton from '../ui/BrowserInfoButton';
 
 const Navbar = () => {
     const { settings, toggleTheme, reset } = useStudyStore();
@@ -19,6 +20,10 @@ const Navbar = () => {
                         StudyFlow <span className="text-violet-500">AI</span>
                     </span>
                 </button>
+
+                <div className="h-6 w-px bg-white/20"></div>
+
+                <BrowserInfoButton />
 
                 <div className="h-6 w-px bg-white/20"></div>
 
