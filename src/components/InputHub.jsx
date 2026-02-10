@@ -177,7 +177,7 @@ const InputHub = ({ onGenerate }) => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
-                    className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/20"
+                    className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/10 backdrop-blur-xl"
                 >
                     {/* Tabs */}
                     <div className="flex border-b border-primary/10 bg-primary/5">
@@ -189,10 +189,10 @@ const InputHub = ({ onGenerate }) => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-medium transition-all relative overflow-hidden
+                                className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-medium transition-all relative overflow-hidden cursor-pointer
                                     ${activeTab === tab.id
-                                        ? 'text-primary bg-primary/10'
-                                        : 'text-secondary hover:text-primary hover:bg-primary/5'
+                                        ? 'text-primary bg-primary/10 border-b-2 border-violet-500'
+                                        : 'text-secondary hover:text-primary hover:bg-primary/5 border-b-2 border-transparent'
                                     }`}
                             >
                                 <tab.icon size={18} className={activeTab === tab.id ? 'text-primary' : ''} />
@@ -210,7 +210,7 @@ const InputHub = ({ onGenerate }) => {
                     {/* Content Area */}
                     <div className="p-8 md:p-12 min-h-[350px] relative">
                         {isLoading && (
-                            <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-md flex items-center justify-center rounded-b-3xl">
+                            <div className="absolute inset-0 z-20 bg-primary/40 backdrop-blur-md flex items-center justify-center rounded-b-3xl">
                                 <Loader text={processingStatus || "Analyzing content..."} size="lg" />
                             </div>
                         )}
@@ -292,7 +292,7 @@ const InputHub = ({ onGenerate }) => {
                                 <div className="w-full max-w-lg">
                                     <div className="relative group">
                                         <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                                            <Youtube className="text-gray-500 group-focus-within:text-red-500 transition-colors" />
+                                            <Youtube className="text-secondary group-focus-within:text-red-500 transition-colors" />
                                         </div>
                                         <input
                                             type="text"
@@ -302,7 +302,7 @@ const InputHub = ({ onGenerate }) => {
                                             onChange={(e) => setVideoUrl(e.target.value)}
                                         />
                                     </div>
-                                    <p className="text-center text-gray-400 text-sm mt-4">
+                                    <p className="text-center text-secondary text-sm mt-4">
                                         Supports public YouTube videos with captions.
                                     </p>
 
@@ -313,9 +313,9 @@ const InputHub = ({ onGenerate }) => {
                                                 <Sparkles size={14} className="text-violet-400" />
                                             </div>
                                             <div>
-                                                <p className="text-violet-200 text-sm font-medium mb-1">For Full Courses & Long Videos:</p>
-                                                <p className="text-violet-300/80 text-xs leading-relaxed">
-                                                    AI browsing has limits. For 100% accuracy on long content (like CS50), we recommend copying the <strong>Transcript</strong> and pasting it in the <button onClick={() => setActiveTab('notes')} className="text-white hover:underline underline-offset-2">Paste Notes</button> tab.
+                                                <p className="text-violet-600 dark:text-violet-200 text-sm font-medium mb-1">For Full Courses & Long Videos:</p>
+                                                <p className="text-violet-500/80 dark:text-violet-300/80 text-xs leading-relaxed">
+                                                    AI browsing has limits. For 100% accuracy on long content (like CS50), we recommend copying the <strong>Transcript</strong> and pasting it in the <button onClick={() => setActiveTab('notes')} className="text-primary hover:underline underline-offset-2">Paste Notes</button> tab.
                                                 </p>
                                             </div>
                                         </div>

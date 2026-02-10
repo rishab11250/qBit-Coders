@@ -36,7 +36,7 @@ const Background3D = () => {
     const isDark = settings.theme === 'dark';
 
     return (
-        <div className={`fixed inset-0 z-0 transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className={`fixed inset-0 z-0 transition-colors duration-500 ${isDark ? 'bg-slate-900' : 'bg-transparent'}`}>
             <Canvas camera={{ position: [0, 0, 1] }}>
                 <Stars />
             </Canvas>

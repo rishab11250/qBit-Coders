@@ -111,7 +111,7 @@ const App = () => {
           )}
         </main>
 
-        <footer className="py-8 text-center text-slate-500 text-sm">
+        <footer className="py-8 text-center text-secondary text-sm">
           <p>&copy; 2026 StudyFlow AI. Built by qBit-Coders.</p>
         </footer>
       </div>

@@ -151,7 +151,7 @@ const DashboardLayout = () => {
             <div className="fixed bottom-8 right-8 z-50">
                 <button
                     onClick={() => setIsChatOpen(true)}
-                    className="group p-4 bg-[var(--bg-secondary)] text-primary hover:text-[var(--accent-primary)] rounded-full shadow-2xl transition-all duration-300 border border-white/10 hover:border-[var(--accent-primary)] hover:scale-110"
+                    className="group p-4 bg-[var(--bg-secondary)] text-primary hover:text-[var(--accent-primary)] rounded-full shadow-2xl transition-all duration-300 border border-primary/10 hover:border-[var(--accent-primary)] hover:scale-110"
                 >
                     <MessageSquare size={24} strokeWidth={1.5} />
                 </button>

@@ -11,7 +11,7 @@ const Loader = ({ size = 'md', text = '', className = '' }) => {
     return (
         <div className={`flex flex-col items-center justify-center p-4 ${className}`}>
             <Loader2 className={`${sizes[size]} text-indigo-600 animate-spin`} />
-            {text && <p className="mt-3 text-sm font-medium text-gray-500 animate-pulse">{text}</p>}
+            {text && <p className="mt-3 text-sm font-medium text-secondary animate-pulse">{text}</p>}
         </div>
     );
 };
