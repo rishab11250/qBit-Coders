@@ -42,37 +42,37 @@ const NODE_STYLES = {
         bgGradient: ['#7c3aed', '#6d28d9'],  // Violet
         stroke: '#a78bfa',
         textFill: '#ffffff', // Pure White
-        glowColor: 'rgba(139,92,246,0.4)',
-        fontSize: 20, // Larger
-        fontWeight: '700',
-        paddingX: 32, // More padding
-        paddingY: 18,
-        borderRadius: 16,
-        strokeWidth: 2.5,
+        glowColor: 'rgba(139,92,246,0.6)', // Stronger Glow
+        fontSize: 24, // Increased from 20
+        fontWeight: '800', // Bolder
+        paddingX: 40, // More padding
+        paddingY: 24,
+        borderRadius: 20,
+        strokeWidth: 3,
     },
     main: {
         bgGradient: ['#0891b2', '#0e7490'],  // Cyan
         stroke: '#22d3ee',
         textFill: '#ffffff', // Pure White
-        glowColor: 'rgba(6,182,212,0.3)',
-        fontSize: 16, // Larger
-        fontWeight: '600',
-        paddingX: 26,
-        paddingY: 14,
-        borderRadius: 14,
-        strokeWidth: 2,
+        glowColor: 'rgba(6,182,212,0.5)',
+        fontSize: 18, // Increased from 16
+        fontWeight: '700', // Bolder
+        paddingX: 30,
+        paddingY: 18,
+        borderRadius: 16,
+        strokeWidth: 2.5,
     },
     child: {
         bgGradient: ['#1e293b', '#334155'],  // Slate
-        stroke: '#94a3b8', // Lighter stroke
-        textFill: '#f1f5f9', // Slate-100 (Brighter)
-        glowColor: 'rgba(148,163,184,0.2)',
-        fontSize: 14, // Larger
-        fontWeight: '500',
-        paddingX: 20,
-        paddingY: 12,
+        stroke: '#cbd5e1', // Lighter stroke for visibility
+        textFill: '#ffffff', // Pure White (was slate-100)
+        glowColor: 'rgba(148,163,184,0.3)',
+        fontSize: 15, // Increased from 14
+        fontWeight: '600', // Bolder
+        paddingX: 24,
+        paddingY: 14,
         borderRadius: 12,
-        strokeWidth: 1.5,
+        strokeWidth: 2,
     },
 };
 
