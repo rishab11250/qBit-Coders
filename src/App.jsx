@@ -13,7 +13,7 @@ const App = () => {
   const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated, isChatOpen } = useStudyStore();
   const [isSharedPlan, setIsSharedPlan] = useState(false);
 
-  const [isHistoryOpen, setIsHistoryOpen] = useState(true); // [NEW] Lifted state
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false); // [NEW] Lifted state
 
   // Apply theme
   useEffect(() => {
@@ -79,6 +79,11 @@ const App = () => {
       else if (processedContent && processedContent.sourceType === 'images' && processedContent.imageData) {
         console.log("🖼️ Generating from uploaded images...");
         result = await generateStudyContent('images', processedContent.imageData);
+      }
+      // [NEW] Multi-PDF Support
+      else if (processedContent && processedContent.sourceType === 'multiple-pdf') {
+        console.log("📚 Generating from Multiple PDFs...");
+        result = await generateStudyContent('multiple-pdf', processedContent.fileData);
       }
       else if (processedContent && processedContent.text) {
         console.log("Generating from Processed Content...");

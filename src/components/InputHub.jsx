@@ -53,34 +53,29 @@ const InputHub = ({ onGenerate }) => {
             // 1. Process based on Tab
             if (activeTab === 'pdf' && localFiles.length > 0) {
                 console.log(`📂 Processing ${localFiles.length} files...`);
-                let allChunks = [];
-                let combinedRawText = "";
+                setProcessingStatus(`Preparing ${localFiles.length} files...`);
 
-                // Process each file sequentially
+                const pdfDataArray = [];
+
+                // Convert all PDFs to base64
                 for (let i = 0; i < localFiles.length; i++) {
                     const file = localFiles[i];
-                    setProcessingStatus(`Processing ${i + 1}/${localFiles.length}: ${file.name}...`);
-
                     try {
-                        const fileResult = await processInput(file);
-                        if (fileResult) {
-                            allChunks.push(...fileResult.chunks);
-                            combinedRawText += fileResult.rawText + "\n\n";
-                        }
+                        const b64 = await fileToBase64(file);
+                        pdfDataArray.push({ mimeType: 'application/pdf', data: b64 });
                     } catch (err) {
                         console.error(`Error processing file ${file.name}:`, err);
-                        // We continue with other files even if one fails
                     }
                 }
 
-                if (allChunks.length > 0) {
+                if (pdfDataArray.length > 0) {
                     result = {
                         sourceType: 'multiple-pdf',
-                        rawText: combinedRawText,
-                        chunks: allChunks
+                        rawText: `[${localFiles.length} PDF files uploaded for analysis]`,
+                        chunks: [],
+                        fileData: pdfDataArray
                     };
                 }
-
             } else if (activeTab === 'images' && imageFiles.length > 0) {
                 console.log(`🖼️ Processing ${imageFiles.length} images...`);
                 setProcessingStatus(`Converting ${imageFiles.length} images...`);

@@ -272,6 +272,17 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
       });
     });
     parts.push({ text: `Analyze these ${content.length} lecture slides/images and create a comprehensive study plan.` });
+  } else if (inputType === 'multiple-pdf' && Array.isArray(content)) {
+    // Multi-PDF support: each item is { mimeType, data }
+    content.forEach((pdf, i) => {
+      parts.push({
+        inlineData: {
+          mimeType: pdf.mimeType, // 'application/pdf'
+          data: pdf.data
+        }
+      });
+    });
+    parts.push({ text: `Analyze these ${content.length} PDF documents comprehensively. Create a unified study plan covering all materials.` });
   } else if (inputType === 'pdf' || inputType === 'image') {
     parts.push({
       inlineData: {
@@ -482,7 +493,34 @@ export async function sendChatMessage(history, newMessage, context) {
   // [Enhanced Context Logic]
   // Prioritize structured 'processedContent' if available (from Daksh's service)
   // This allows the AI to see the structure of the document better (chunks, metadata)
-  if (context.processedContent && context.processedContent.text) {
+
+  const historyParts = [];
+
+  // 1. Handle Multi-PDF Context (Base64)
+  if (context.processedContent && context.processedContent.sourceType === 'multiple-pdf' && context.processedContent.fileData) {
+    contextPrompt += "\n\n[System] The user has uploaded multiple PDF documents. Use the visual/text data provided below to answer questions.";
+
+    // Add each PDF as inlineData to the *history* (simulating previous turn or system context)
+    // Gemeni Chat API expects history to be { role, parts }. We can prepend a 'user' message with the files.
+
+    const fileParts = context.processedContent.fileData.map(file => ({
+      inlineData: {
+        mimeType: file.mimeType,
+        data: file.data
+      }
+    }));
+
+    // We'll attach these files to the *latest* message or a system message equivalent
+    // Ideally, we add them to the very first message of the conversation, or a new 'user' message just before the question.
+    // For simplicity and effectiveness, let's prepend a "Here are the files" message if it's the start, 
+    // OR just attach them to the current request if the API supports it.
+    // simpler approach: modify the `newMessage` payload to include the images? No, `sendMessage` takes string usually.
+    // We need to construct the `contents` array manually.
+
+  }
+
+  // 2. Handle Text Context
+  else if (context.processedContent && context.processedContent.text) {
     const { text, metadata } = context.processedContent;
     const title = metadata?.title ? `Title: ${metadata.title}\n` : '';
     // We limit context to ~30k chars to stay safe within Flash Lite limits
@@ -522,6 +560,19 @@ export async function sendChatMessage(history, newMessage, context) {
         });
       });
       contextPrompt += "\n\n[Context: The user has uploaded images/slides. Refer to them.]";
+    }
+
+    // [NEW] If we have Multi-PDF data in context, include it!
+    if (context.processedContent && context.processedContent.sourceType === 'multiple-pdf' && context.processedContent.fileData) {
+      context.processedContent.fileData.forEach(file => {
+        userMessageParts.push({
+          inlineData: {
+            mimeType: file.mimeType,
+            data: file.data
+          }
+        });
+      });
+      contextPrompt += "\n\n[Context: The user has uploaded multiple PDF documents. Refer to them for answers.]";
     }
 
     userMessageParts.push({ text: `${contextPrompt}\n\nStudent Question: ${newMessage}` });
