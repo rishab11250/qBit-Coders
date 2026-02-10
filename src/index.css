@@ -13,24 +13,40 @@
 }
 
 :root {
-  /* Default Dark Theme */
-  --bg-primary: #020617;
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  /* Ultra-Premium Dark Minimalist Theme */
+  --bg-primary: #0F0F0F;
+  /* Deep Charcoal / True Black */
+  --bg-secondary: #1A1A1A;
+  /* Slightly lighter for cards */
+  --text-primary: #E0E0E0;
+  /* Off-white for less eye strain */
+  --text-secondary: #A0A0A0;
+  /* Muted gray */
+
+  /* Glassmorphism Refined */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  /* More subtle */
+
+  /* Accents - High Contrast & Limited Palette */
   --accent-primary: #8b5cf6;
-  --accent-secondary: #ec4899;
+  /* Violet (Brand) */
+  --accent-teal: #14b8a6;
+  /* Teal (Success/Growth) */
+  --accent-amber: #f59e0b;
+  /* Amber (Focus/Highlight) */
+  --accent-rose: #f43f5e;
+  /* Rose (Alerts) */
 }
 
 body[data-theme='light'] {
-  --bg-primary: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(255, 255, 255, 1);
+  --bg-primary: #FAFAFA;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #171717;
+  --text-secondary: #525252;
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.05);
   --accent-primary: #7c3aed;
-  --accent-secondary: #db2777;
 }
 
 body {
@@ -39,28 +55,31 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
+  /* Increased readability */
+  letter-spacing: 0.01em;
+  /* Premium feel */
 }
 
-/* Glassmorphism Utilities */
+/* Glassmorphism Utilities - Refined */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-secondary);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  /* Very subtle shadow */
 }
 
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--bg-secondary);
   border: 1px solid var(--glass-border);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  background: color-mix(in srgb, var(--glass-bg), var(--accent-primary) 5%);
   border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* Lift effect */
 }
 
 .glass-input {

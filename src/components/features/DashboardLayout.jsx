@@ -25,57 +25,58 @@ const DashboardLayout = () => {
     }, { scope: containerRef });
 
     return (
-        <div ref={containerRef} className="relative z-10 min-h-screen pb-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div ref={containerRef} className="relative z-10 min-h-screen pb-20">
+            <div className="max-w-6xl mx-auto px-6 py-12">
 
-                <div className="gsap-stagger flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h2 className="text-4xl font-extrabold text-primary tracking-tight">Your Study Plan</h2>
-                        <div className="flex items-center gap-2 mt-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <p className="text-secondary">AI Analysis Complete</p>
+                {/* Header Area */}
+                <div className="gsap-stagger mb-16">
+                    <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <p className="text-secondary text-sm font-medium tracking-wide uppercase">Analysis Complete</p>
+                            </div>
+                            <h2 className="text-5xl font-bold text-primary tracking-tight leading-[1.1]">Your <span className="text-[var(--accent-primary)]">Study Plan</span></h2>
                         </div>
+                        <Button variant="secondary" onClick={reset} className="glass-panel text-primary text-sm px-6 py-3 rounded-xl hover:border-[var(--accent-primary)] transition-colors">
+                            <ArrowLeft size={16} className="mr-2" />
+                            New Analysis
+                        </Button>
                     </div>
-                    <Button variant="secondary" onClick={reset} className="glass-panel hover:bg-white/10 text-primary border-white/20">
-                        <ArrowLeft size={16} className="mr-2" />
-                        Analyze New Content
-                    </Button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8">
+                <div className="grid grid-cols-1 gap-12">
 
                     {/* Summary Section */}
-                    <section className="gsap-stagger relative overflow-hidden rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <section className="gsap-stagger">
+                        <div className="mb-6 flex items-center gap-3">
+                            <h3 className="text-2xl font-bold text-primary">Executive Summary</h3>
+                            <div className="h-px flex-1 bg-white/10"></div>
+                        </div>
 
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                    <FileText size={20} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-primary tracking-tight">Executive Summary</h3>
-                            </div>
-                            <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
-                                {/* Handle both String and Object summaries */}
+                        <div className="glass-panel rounded-2xl p-8 md:p-10 relative overflow-hidden group">
+                            {/* Decorative ambient glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+
+                            <div className="relative z-10 prose prose-invert max-w-none text-white/80 text-lg leading-relaxed">
                                 {typeof summary === 'object' && summary !== null ? (
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         {summary.simple_explanation && (
-                                            <div className="bg-indigo-500/10 p-5 rounded-2xl border border-indigo-500/20">
-                                                <h4 className="text-lg font-bold text-indigo-300 mb-2 flex items-center gap-2">
-                                                    <span>💡</span> Simple Explanation
-                                                </h4>
-                                                <p className="text-indigo-100/90">{summary.simple_explanation}</p>
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-[var(--accent-primary)] uppercase tracking-wider mb-3">In Simple Terms</h4>
+                                                <p className="text-white text-xl font-light leading-relaxed">{summary.simple_explanation}</p>
                                             </div>
                                         )}
                                         {summary.executive_brief && (
-                                            <div>
-                                                <h4 className="text-lg font-bold text-primary mb-3 flex items-center gap-2">
-                                                    <span>📋</span> Executive Brief
-                                                </h4>
+                                            <div className="pt-6 border-t border-white/5">
+                                                <h4 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">Key Takeaways</h4>
                                                 {Array.isArray(summary.executive_brief) ? (
-                                                    <ul className="space-y-2 list-disc pl-5 marker:text-emerald-500">
+                                                    <ul className="grid md:grid-cols-2 gap-4 list-none pl-0">
                                                         {summary.executive_brief.map((item, i) => (
-                                                            <li key={i} className="pl-1">{item}</li>
+                                                            <li key={i} className="flex gap-3 items-start">
+                                                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-teal)] flex-shrink-0"></span>
+                                                                <span className="text-white/90">{item}</span>
+                                                            </li>
                                                         ))}
                                                     </ul>
                                                 ) : (
@@ -85,81 +86,74 @@ const DashboardLayout = () => {
                                         )}
                                     </div>
                                 ) : (
-                                    <p>{summary}</p>
+                                    <p className="text-white text-xl font-light">{summary}</p>
                                 )}
                             </div>
                         </div>
                     </section>
 
-                    {/* Concepts Section */}
-                    <section className="gsap-stagger rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                <Share2 size={20} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-primary tracking-tight">Knowledge Graph</h3>
+                    {/* Knowledge Graph Section */}
+                    <section className="gsap-stagger">
+                        <div className="mb-6 flex items-center gap-3">
+                            <h3 className="text-2xl font-bold text-primary">Knowledge Map</h3>
+                            <div className="h-px flex-1 bg-white/10"></div>
                         </div>
 
-                        <div className="h-[450px] w-full relative overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                        <div className="h-[500px] w-full rounded-2xl border border-white/5 bg-[var(--bg-secondary)] overflow-hidden relative">
+                            <div className="absolute top-4 left-4 z-10 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 text-xs text-secondary">
+                                Interactive Tree Graph
+                            </div>
                             <ConceptGraph concepts={concepts} />
                         </div>
                     </section>
 
                     {/* Weak Areas Section */}
                     {weakAreas.length > 0 && (
-                        <section
-                            className="gsap-stagger rounded-3xl p-8 border border-red-500/30 bg-red-500/10 backdrop-blur-md"
-                        >
-                            <div className="flex items-center gap-3 mb-4 text-red-400">
-                                <AlertTriangle size={24} />
-                                <h3 className="text-xl font-bold">Focus Areas</h3>
+                        <section className="gsap-stagger">
+                            <div className="mb-6 flex items-center gap-3">
+                                <h3 className="text-2xl font-bold text-primary">Focus Areas</h3>
+                                <div className="h-px flex-1 bg-white/10"></div>
                             </div>
-                            <p className="text-red-200/80 mb-4">You struggled with these topics. We recommend reviewing them:</p>
-                            <div className="flex flex-wrap gap-3">
-                                {weakAreas.map((area, i) => (
-                                    <span key={i} className="px-4 py-2 bg-red-500/20 text-red-200 font-medium rounded-xl border border-red-500/30">
-                                        {area}
-                                    </span>
-                                ))}
+
+                            <div className="glass-panel p-8 rounded-2xl border-l-4 border-l-[var(--accent-rose)]">
+                                <p className="text-secondary mb-6">Based on your input, we've identified these key topics that may require extra attention:</p>
+                                <div className="flex flex-wrap gap-3">
+                                    {weakAreas.map((area, i) => (
+                                        <div key={i} className="px-5 py-2.5 bg-[var(--bg-primary)] text-primary border border-white/10 rounded-lg text-sm font-medium">
+                                            {area}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </section>
                     )}
 
                     {/* Interactive Quiz Section */}
-                    <section className="gsap-stagger rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                <HelpCircle size={20} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-primary tracking-tight">Interactive Quiz</h3>
+                    <section className="gsap-stagger">
+                        <div className="mb-6 flex items-center gap-3">
+                            <h3 className="text-2xl font-bold text-primary">Quiz</h3>
+                            <div className="h-px flex-1 bg-white/10"></div>
                         </div>
-                        <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
+                        <div className="glass-panel rounded-2xl p-1">
+                            <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
+                        </div>
                     </section>
 
-                    {/* Smart Schedule Section - Moved to last */}
-                    <section className="gsap-stagger rounded-3xl p-8 bg-black/50 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                <Calendar size={20} />
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-primary tracking-tight">Smart Schedule</h3>
-                                <p className="text-sm text-secondary">Your personalized timeline</p>
-                            </div>
-                        </div>
+                    {/* Smart Schedule Section */}
+                    <div className="gsap-stagger">
                         <StudySchedule />
-                    </section>
+                    </div>
 
                 </div>
             </div>
 
-            {/* Chat Floating Button */}
-            <div className="fixed bottom-6 right-6 z-50">
+            {/* Chat Floating Button - Minimalist */}
+            <div className="fixed bottom-8 right-8 z-50">
                 <button
                     onClick={() => setIsChatOpen(true)}
-                    className="gsap-float-btn p-4 bg-[var(--accent-primary)] hover:opacity-90 text-white rounded-full shadow-2xl transition-all duration-300 border-2 border-white/20"
+                    className="group p-4 bg-[var(--bg-secondary)] text-primary hover:text-[var(--accent-primary)] rounded-full shadow-2xl transition-all duration-300 border border-white/10 hover:border-[var(--accent-primary)] hover:scale-110"
                 >
-                    <MessageSquare size={24} />
+                    <MessageSquare size={24} strokeWidth={1.5} />
                 </button>
             </div>
 

@@ -31,14 +31,15 @@ class GraphErrorBoundary extends React.Component {
 
 const ConceptGraph = ({ concepts }) => {
     const { settings } = useStudyStore();
-    const isDark = settings.theme === 'dark';
+    // Always dark theme for this premium look, but respecting toggle if needed for text
+    const isDark = true;
 
     const graphData = useMemo(() => {
         if (!concepts) return { nodes: [], links: [] };
         const nodes = [];
         const links = [];
 
-        concepts.forEach((concept, index) => {
+        concepts.forEach((concept) => {
             // Main Concept Node (Group 1)
             const mainNodeId = concept.name;
             if (!nodes.find(n => n.id === mainNodeId)) {
@@ -59,60 +60,92 @@ const ConceptGraph = ({ concepts }) => {
     }, [concepts]);
 
     return (
-        <div className="w-full h-full min-h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-black/20">
+        <div className="w-full h-full min-h-[500px] bg-[var(--bg-secondary)] relative group">
             <GraphErrorBoundary>
                 <ForceGraph2D
                     graphData={graphData}
+                    dagMode="td" /* Tree Layout: Top-Down */
+                    dagLevelDistance={100}
+                    backgroundColor="transparent"
                     nodeAutoColorBy="group"
                     nodeLabel="id"
-                    backgroundColor="rgba(0,0,0,0)"
-                    linkColor={() => isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
-                    nodeRelSize={6}
-                    d3VelocityDecay={0.1} // More fluid movement
-                    d3AlphaDecay={0.02}   // Slower settle time
+
+                    /* Link Styling */
+                    linkColor={() => 'rgba(255,255,255,0.15)'}
+                    linkWidth={1.5}
+                    linkDirectionalParticles={2}
+                    linkDirectionalParticleSpeed={0.005}
+                    linkDirectionalParticleWidth={2}
+                    linkCurvature={0.25}
+
+                    /* Engine Settings */
+                    d3VelocityDecay={0.3}
                     cooldownTicks={100}
-                    onEngineStop={() => { }} // Keep it alive if needed
+                    onEngineStop={() => { }}
 
                     // Custom Node Rendering
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.id;
-                        const fontSize = (node.group === 1 ? 16 : 12) / globalScale;
-                        ctx.font = `${node.group === 1 ? 'bold' : ''} ${fontSize}px Sans-Serif`;
+                        const fontSize = (node.group === 1 ? 14 : 11) / globalScale;
+                        ctx.font = `${node.group === 1 ? '600' : '400'} ${fontSize}px 'Outfit', sans-serif`;
 
                         const textWidth = ctx.measureText(label).width;
-                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.5);
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.8);
 
-                        // Dynamic Colors based on theme
-                        const primaryColor = isDark ? '#8b5cf6' : '#7c3aed'; // Violet
-                        const secondaryColor = isDark ? '#db2777' : '#be185d'; // Pink
-
+                        // Premium Colors
+                        const primaryColor = '#8b5cf6'; // Violet
+                        const secondaryColor = '#14b8a6'; // Teal
                         const nodeColor = node.group === 1 ? primaryColor : secondaryColor;
-                        const bgColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
 
-                        // Draw Node Circle (behind text)
+                        // Draw Node Glow
+                        ctx.shadowColor = nodeColor;
+                        ctx.shadowBlur = node.group === 1 ? 15 : 5;
+
+                        // Draw Node Circle
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, node.val / 3, 0, 2 * Math.PI, false);
+                        ctx.arc(node.x, node.y, (node.group === 1 ? 6 : 4), 0, 2 * Math.PI, false);
                         ctx.fillStyle = nodeColor;
                         ctx.fill();
 
-                        // Draw Label Background
-                        ctx.fillStyle = bgColor;
+                        // Reset Shadow for text
+                        ctx.shadowBlur = 0;
+
+                        // Draw Label Background (Capsule)
+                        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'; // Dark background
                         ctx.beginPath();
-                        ctx.roundRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2 + (node.group === 1 ? 20 : 15), ...bckgDimensions, 4);
+                        ctx.roundRect(
+                            node.x - bckgDimensions[0] / 2,
+                            node.y + 12,
+                            bckgDimensions[0],
+                            bckgDimensions[1],
+                            4
+                        );
                         ctx.fill();
 
-                        // Text Border
-                        ctx.strokeStyle = nodeColor;
+                        // Border for Label
+                        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
                         ctx.lineWidth = 1 / globalScale;
                         ctx.stroke();
 
                         // Draw Label Text
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillStyle = nodeColor;
-                        ctx.fillText(label, node.x, node.y + (node.group === 1 ? 20 : 15));
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillText(label, node.x, node.y + 12 + bckgDimensions[1] / 2);
                     }}
                 />
+
+                {/* Legend Overlay */}
+                <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-medium text-secondary bg-black/40 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/5">
+                    <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]"></span>
+                        <span>Key Concepts</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.6)]"></span>
+                        <span>Related Topics</span>
+                    </div>
+                </div>
             </GraphErrorBoundary>
         </div>
     );

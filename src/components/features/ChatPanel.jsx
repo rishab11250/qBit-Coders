@@ -91,8 +91,8 @@ const ChatPanel = ({ isOpen, onClose }) => {
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed top-0 right-0 h-full w-full md:w-[400px] z-[100] glass-panel border-l border-white/10 shadow-2xl flex flex-col pointer-events-auto"
                     >
-                        {/* Header */}
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 backdrop-blur-md relative z-10">
+                        {/* Header with Flexbox Layout */}
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-md relative z-10 pt-5 pb-5 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-[var(--accent-primary)]/20 rounded-lg text-[var(--accent-primary)]">
                                     <Bot size={20} />
@@ -105,18 +105,6 @@ const ChatPanel = ({ isOpen, onClose }) => {
                                     </p>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    console.log('Close button clicked');
-                                    onClose();
-                                }}
-                                className="relative z-50 p-3 hover:bg-red-500/20 rounded-full text-white hover:text-red-400 transition-colors cursor-pointer pointer-events-auto bg-white/5"
-                                aria-label="Close chat"
-                            >
-                                <X size={22} strokeWidth={2.5} />
-                            </button>
                         </div>
 
                         {/* Messages Area */}
