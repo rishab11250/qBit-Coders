@@ -5,10 +5,18 @@ const useStudyStore = create(
     persist(
         (set, get) => ({
             // Content State
-            pdfFile: null, // Files cannot be persisted easily in localStorage
-            extractedText: '',
+            pdfFile: null,
+            extractedText: '', // Legacy support
             notes: '',
             videoUrl: '',
+
+            // [NEW] Structured Logic State (Daksh's Layer)
+            processedContent: {
+                type: null, // 'pdf' | 'video' | 'text'
+                text: '',
+                chunks: [], // { id, content, timestamp?, type }
+                metadata: {}
+            },
 
             // Output State
             summary: '',
@@ -21,14 +29,14 @@ const useStudyStore = create(
             // Schedule State (Logic Domain)
             studySchedule: null, // { days: [ { day: string, tasks: [] } ] }
 
-            // Chat State (Logic Domain)
+            // Chat State
             chatHistory: [], // Array of { role: 'user' | 'ai', content: string }
             isChatLoading: false,
 
             // UI State
             isLoading: false,
             error: null,
-            currentStep: 'input', // input, analyzing, dashboard
+            currentStep: 'input',
 
             // Settings State
             settings: {
@@ -44,12 +52,15 @@ const useStudyStore = create(
             setNotes: (notes) => set({ notes }),
             setVideoUrl: (url) => set({ videoUrl: url }),
 
+            // [NEW] Action to store processed data
+            setProcessedContent: (data) => set({ processedContent: data }),
+
             setStudyData: (data) => set({
                 summary: data.summary || '',
                 topics: data.topics || [],
                 concepts: data.concepts || [],
                 quiz: data.quiz || [],
-                currentStep: 'dashboard', // Auto-switch to dashboard
+                currentStep: 'dashboard',
                 isLoading: false,
                 error: null
             }),

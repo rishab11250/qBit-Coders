@@ -124,6 +124,55 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 }
 
 /**
+ * Low-level function to call Gemini API directly.
+ * Useful for intermediate processing steps (like video transcription or OCR).
+ * 
+ * @param {string} systemPrompt 
+ * @param {string} userPrompt 
+ * @param {object} fileData - Optional { mimeType, data (base64) }
+ * @returns {Promise<string>} Raw text response
+ */
+export async function callGemini(systemPrompt, userPrompt, fileData = null) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("API Key Missing");
+
+  const parts = [{ text: systemPrompt }];
+
+  if (fileData) {
+    parts.push({
+      inlineData: {
+        mimeType: fileData.mimeType,
+        data: fileData.data
+      }
+    });
+  }
+
+  parts.push({ text: userPrompt });
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: parts }]
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  } catch (error) {
+    console.error("Gemini Call Failed:", error);
+    throw error;
+  }
+}
+
+/**
  * Sends a chat message to the AI, maintaining context of the study material.
  * 
  * @param {Array} history - Array of { role: 'user' | 'model', parts: [{ text: string }] }

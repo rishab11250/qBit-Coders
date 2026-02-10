@@ -119,7 +119,7 @@ const InputHub = ({ onGenerate }) => {
                     <div className="p-8 min-h-[320px] bg-white relative">
                         {isLoading && (
                             <div className="absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex items-center justify-center">
-                                <Loader text="Processing file..." size="lg" />
+                                <Loader text={processingStatus || "Processing..."} size="lg" />
                             </div>
                         )}
 
@@ -196,7 +196,7 @@ const InputHub = ({ onGenerate }) => {
                             variant="primary"
                             size="lg"
                             className="w-full sm:w-auto min-w-[200px] shadow-indigo-200 shadow-xl"
-                            onClick={onGenerate}
+                            onClick={handleMainGenerate}
                             disabled={!isReady() || isLoading}
                             isLoading={isLoading}
                         >
