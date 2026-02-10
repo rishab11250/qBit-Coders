@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Share2, AlertTriangle, HelpCircle, ArrowLeft, MessageSquare, Calendar, BarChart3, Check, Link2, Target, Flame, Crosshair, Lightbulb, BookMarked, BrainCircuit, Atom, Puzzle, Eye, Sparkles, ArrowUp, Bot } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import { motion, AnimatePresence } from 'framer-motion';
 import useStudyStore from '../../store/useStudyStore';
 import QuizInteractive from '../QuizInteractive';
 import Button from '../ui/Button';
@@ -132,13 +133,7 @@ const DashboardLayout = () => {
                         </div>
                     </div>
 
-                    {/* Share Toast */}
-                    {shareToast && (
-                        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium shadow-2xl backdrop-blur-md animate-slide-in">
-                            <Check size={16} />
-                            Link copied to clipboard!
-                        </div>
-                    )}
+
 
                     <div className="space-y-16">
 
@@ -379,6 +374,21 @@ const DashboardLayout = () => {
                 {/* Chat Panel */}
                 <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
             </div>
+            {/* Share Toast - Moved to root to avoid z-index stacking issues */}
+            <AnimatePresence>
+                {shareToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, x: 20 }}
+                        animate={{ opacity: 1, y: 0, x: 0 }}
+                        exit={{ opacity: 0, y: -20, x: 20 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="fixed top-24 right-6 z-[100] flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium shadow-2xl backdrop-blur-md"
+                    >
+                        <Check size={16} />
+                        Link copied to clipboard!
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -137,7 +137,7 @@ const PomodoroTimer = () => {
 
     return (
         <motion.div
-            className={`fixed bottom-6 left-6 z-40 flex flex-col items-start justify-end ${isExpanded ? 'w-72' : 'w-14 h-14'
+            className={`fixed bottom-6 left-3 z-40 flex flex-col items-start justify-end ${isExpanded ? 'w-72' : 'w-14 h-14'
                 }`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -214,8 +214,8 @@ const PomodoroTimer = () => {
                                     <button
                                         onClick={togglePin}
                                         className={`p-1.5 rounded-lg transition-colors ${isPinned
-                                                ? 'bg-violet-500/20 text-violet-300'
-                                                : 'hover:bg-white/5 text-secondary hover:text-white'
+                                            ? 'bg-violet-500/20 text-violet-300'
+                                            : 'hover:bg-white/5 text-secondary hover:text-white'
                                             }`}
                                         title={isPinned ? "Unpin widget" : "Pin widget open"}
                                     >
@@ -224,8 +224,8 @@ const PomodoroTimer = () => {
                                     <button
                                         onClick={toggleSettings}
                                         className={`p-1.5 rounded-lg transition-colors ${showSettings
-                                                ? 'bg-violet-500/20 text-violet-300'
-                                                : 'hover:bg-white/5 text-secondary hover:text-white'
+                                            ? 'bg-violet-500/20 text-violet-300'
+                                            : 'hover:bg-white/5 text-secondary hover:text-white'
                                             }`}
                                     >
                                         <Settings size={14} />

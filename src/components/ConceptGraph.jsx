@@ -34,42 +34,45 @@ class GraphErrorBoundary extends React.Component {
 /* =========================================================
    COLOR PALETTE — for node hierarchy
 ========================================================= */
+/* =========================================================
+   COLOR PALETTE — for node hierarchy
+========================================================= */
 const NODE_STYLES = {
     root: {
         bgGradient: ['#7c3aed', '#6d28d9'],  // Violet
         stroke: '#a78bfa',
-        textFill: '#f5f3ff',
-        glowColor: 'rgba(139,92,246,0.25)',
-        fontSize: 16,
+        textFill: '#ffffff', // Pure White
+        glowColor: 'rgba(139,92,246,0.4)',
+        fontSize: 20, // Larger
         fontWeight: '700',
-        paddingX: 28,
-        paddingY: 14,
-        borderRadius: 14,
-        strokeWidth: 2,
+        paddingX: 32, // More padding
+        paddingY: 18,
+        borderRadius: 16,
+        strokeWidth: 2.5,
     },
     main: {
         bgGradient: ['#0891b2', '#0e7490'],  // Cyan
         stroke: '#22d3ee',
-        textFill: '#ecfeff',
-        glowColor: 'rgba(6,182,212,0.2)',
-        fontSize: 14,
+        textFill: '#ffffff', // Pure White
+        glowColor: 'rgba(6,182,212,0.3)',
+        fontSize: 16, // Larger
         fontWeight: '600',
-        paddingX: 22,
-        paddingY: 11,
-        borderRadius: 12,
-        strokeWidth: 1.5,
+        paddingX: 26,
+        paddingY: 14,
+        borderRadius: 14,
+        strokeWidth: 2,
     },
     child: {
         bgGradient: ['#1e293b', '#334155'],  // Slate
-        stroke: '#475569',
-        textFill: '#cbd5e1',
-        glowColor: 'rgba(100,116,139,0.15)',
-        fontSize: 12,
+        stroke: '#94a3b8', // Lighter stroke
+        textFill: '#f1f5f9', // Slate-100 (Brighter)
+        glowColor: 'rgba(148,163,184,0.2)',
+        fontSize: 14, // Larger
         fontWeight: '500',
-        paddingX: 16,
-        paddingY: 9,
-        borderRadius: 10,
-        strokeWidth: 1,
+        paddingX: 20,
+        paddingY: 12,
+        borderRadius: 12,
+        strokeWidth: 1.5,
     },
 };
 
@@ -111,27 +114,27 @@ const ConceptGraph = ({ concepts }) => {
 
         const topConcepts = concepts.slice(0, 5);
 
-        topConcepts.forEach(concept => {
+        topConcepts.forEach((concept, mainIndex) => {
             const name = concept.name || concept.id || concept;
             const node = {
                 name: name,
-                attributes: { group: "main" },
+                attributes: { group: "main", mainIndex: mainIndex + 1 },
                 children: []
             };
 
             if (concept.related && Array.isArray(concept.related)) {
-                concept.related.slice(0, 4).forEach(rel => {
+                concept.related.slice(0, 4).forEach((rel, childIndex) => {
                     node.children.push({
                         name: rel,
-                        attributes: { group: "child" }
+                        attributes: { group: "child", index: childIndex + 1 }
                     });
                 });
             } else {
                 const others = concepts.filter(c => (c.name || c) !== name).slice(0, 3);
-                others.forEach(o => {
+                others.forEach((o, childIndex) => {
                     node.children.push({
                         name: o.name || o,
-                        attributes: { group: "child" }
+                        attributes: { group: "child", index: childIndex + 1 }
                     });
                 });
             }
@@ -151,6 +154,8 @@ const ConceptGraph = ({ concepts }) => {
     const renderCustomNodeElement = ({ nodeDatum, toggleNode }) => {
         const isRoot = nodeDatum.attributes?.isRoot;
         const isMain = nodeDatum.attributes?.group === "main";
+        const isChild = nodeDatum.attributes?.group === "child";
+        const childIndex = nodeDatum.attributes?.index;
 
         const style = isRoot ? NODE_STYLES.root : (isMain ? NODE_STYLES.main : NODE_STYLES.child);
         const fullLabel = nodeDatum.name;
@@ -159,9 +164,11 @@ const ConceptGraph = ({ concepts }) => {
         const isHovered = hoveredNode === nodeId;
 
         // Calculate dimensions
-        const charWidth = style.fontSize * 0.58;
+        const charWidth = style.fontSize * 0.6; // Adjusted for font
         const textWidth = displayLabel.length * charWidth;
-        const width = textWidth + (style.paddingX * 2);
+        // Extra padding for serial number
+        const serialPadding = isChild ? 24 : 0;
+        const width = textWidth + (style.paddingX * 2) + serialPadding;
         const height = style.fontSize + (style.paddingY * 2);
 
         // Gradient ID
@@ -175,7 +182,7 @@ const ConceptGraph = ({ concepts }) => {
                 style={{
                     cursor: "pointer",
                     transition: 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                    transform: isHovered ? 'translateY(-5px)' : 'translateY(0)'
+                    transform: isHovered ? 'translateY(-5px) scale(1.05)' : 'translateY(0) scale(1)'
                 }}
             >
                 {/* Gradient Definition */}
@@ -185,7 +192,7 @@ const ConceptGraph = ({ concepts }) => {
                         <stop offset="100%" stopColor={style.bgGradient[1]} />
                     </linearGradient>
                     <filter id={filterId}>
-                        <feDropShadow dx="0" dy={isHovered ? "8" : "2"} stdDeviation={isHovered ? "6" : "3"} floodColor={style.glowColor} floodOpacity={isHovered ? "0.4" : "0.3"} />
+                        <feDropShadow dx="0" dy={isHovered ? "8" : "4"} stdDeviation={isHovered ? "8" : "4"} floodColor={style.glowColor} floodOpacity={isHovered ? "0.6" : "0.4"} />
                     </filter>
                 </defs>
 
@@ -199,8 +206,8 @@ const ConceptGraph = ({ concepts }) => {
                         rx={style.borderRadius + 4}
                         fill="none"
                         stroke={style.stroke}
-                        strokeWidth="1"
-                        opacity="0.4"
+                        strokeWidth="1.5"
+                        opacity="0.6"
                     />
                 )}
 
@@ -221,14 +228,36 @@ const ConceptGraph = ({ concepts }) => {
                     }}
                 />
 
-                {/* Icon dot for main nodes */}
+                {/* Serial Number Badge (Child Nodes) */}
+                {isChild && childIndex && (
+                    <g transform={`translate(${-width / 2 + 18}, 0)`}>
+                        <circle
+                            r={10}
+                            fill="rgba(255,255,255,0.15)"
+                            stroke={style.stroke}
+                            strokeWidth="1"
+                        />
+                        <text
+                            dy=".35em"
+                            textAnchor="middle"
+                            fontSize="10"
+                            fontWeight="800"
+                            fill="#ffffff"
+                            style={{ pointerEvents: "none" }}
+                        >
+                            {childIndex}
+                        </text>
+                    </g>
+                )}
+
+                {/* Icon dot for main/root nodes */}
                 {(isRoot || isMain) && (
                     <circle
-                        cx={-width / 2 + 14}
+                        cx={-width / 2 + 16}
                         cy={0}
-                        r={3}
+                        r={4}
                         fill={style.textFill}
-                        opacity={0.6}
+                        opacity={0.9}
                     />
                 )}
 
@@ -236,7 +265,7 @@ const ConceptGraph = ({ concepts }) => {
                 <text
                     fill={style.textFill}
                     strokeWidth="0"
-                    x={(isRoot || isMain) ? 6 : 0}
+                    x={(isRoot || isMain) ? 8 : (isChild ? 12 : 0)}
                     y="0"
                     dy=".35em"
                     fontSize={style.fontSize}
@@ -244,7 +273,7 @@ const ConceptGraph = ({ concepts }) => {
                     fontFamily="'Outfit', sans-serif"
                     textAnchor="middle"
                     onClick={toggleNode}
-                    style={{ cursor: "pointer", pointerEvents: "none", letterSpacing: '0.01em' }}
+                    style={{ cursor: "pointer", pointerEvents: "none", letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
                 >
                     {displayLabel}
                 </text>
@@ -255,18 +284,18 @@ const ConceptGraph = ({ concepts }) => {
                         <circle
                             cx={width / 2 - 2}
                             cy={-height / 2 + 2}
-                            r={9}
+                            r={10}
                             fill={style.bgGradient[0]}
                             stroke={style.stroke}
-                            strokeWidth={1}
+                            strokeWidth={1.5}
                         />
                         <text
                             x={width / 2 - 2}
                             y={-height / 2 + 2}
                             dy=".35em"
                             textAnchor="middle"
-                            fontSize={9}
-                            fontWeight="700"
+                            fontSize={10}
+                            fontWeight="800"
                             fill={style.textFill}
                             style={{ pointerEvents: "none" }}
                         >
@@ -292,26 +321,27 @@ const ConceptGraph = ({ concepts }) => {
             {/* SVG CSS for custom links */}
             <style>{`
                 .concept-tree-link {
-                    stroke: rgba(100, 116, 139, 0.25) !important;
-                    stroke-width: 1.5px !important;
+                    stroke: rgba(148, 163, 184, 0.4) !important;
+                    stroke-width: 2px !important;
                     fill: none !important;
                     transition: stroke 0.3s ease;
                 }
                 .concept-tree-link:hover {
-                    stroke: rgba(139, 92, 246, 0.5) !important;
-                    stroke-width: 2px !important;
+                    stroke: rgba(139, 92, 246, 0.8) !important;
+                    stroke-width: 3px !important;
+                    filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.5));
                 }
             `}</style>
 
             <GraphErrorBoundary>
                 <Tree
                     data={treeData}
-                    orientation="vertical"
+                    orientation="horizontal"
                     pathFunc="step"
-                    translate={{ x: dimensions.width / 2, y: 80 }}
+                    translate={{ x: 100, y: dimensions.height / 2 }}
 
-                    nodeSize={{ x: 340, y: 150 }}
-                    separation={{ siblings: 2.7, nonSiblings: 3.2 }}
+                    nodeSize={{ x: 340, y: 100 }}
+                    separation={{ siblings: 0.8, nonSiblings: 1.2 }}
 
                     renderCustomNodeElement={renderCustomNodeElement}
                     enableLegacyTransitions={true}
