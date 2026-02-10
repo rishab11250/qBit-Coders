@@ -2,6 +2,33 @@ import React, { useMemo } from 'react';
 import useStudyStore from '../store/useStudyStore';
 import ForceGraph2D from 'react-force-graph-2d';
 
+class GraphErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("Concept Graph WebGL Error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="w-full h-full flex items-center justify-center text-secondary text-sm bg-black/20 rounded-2xl border border-white/10 p-4">
+                    <p>Graph visualization unavailable (WebGL Context Lost). Please refresh.</p>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
 const ConceptGraph = ({ concepts }) => {
     const { settings } = useStudyStore();
     const isDark = settings.theme === 'dark';
@@ -33,58 +60,60 @@ const ConceptGraph = ({ concepts }) => {
 
     return (
         <div className="w-full h-full min-h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-black/20">
-            <ForceGraph2D
-                graphData={graphData}
-                nodeAutoColorBy="group"
-                nodeLabel="id"
-                backgroundColor="rgba(0,0,0,0)"
-                linkColor={() => isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
-                nodeRelSize={6}
-                d3VelocityDecay={0.1} // More fluid movement
-                d3AlphaDecay={0.02}   // Slower settle time
-                cooldownTicks={100}
-                onEngineStop={() => { }} // Keep it alive if needed
+            <GraphErrorBoundary>
+                <ForceGraph2D
+                    graphData={graphData}
+                    nodeAutoColorBy="group"
+                    nodeLabel="id"
+                    backgroundColor="rgba(0,0,0,0)"
+                    linkColor={() => isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
+                    nodeRelSize={6}
+                    d3VelocityDecay={0.1} // More fluid movement
+                    d3AlphaDecay={0.02}   // Slower settle time
+                    cooldownTicks={100}
+                    onEngineStop={() => { }} // Keep it alive if needed
 
-                // Custom Node Rendering
-                nodeCanvasObject={(node, ctx, globalScale) => {
-                    const label = node.id;
-                    const fontSize = (node.group === 1 ? 16 : 12) / globalScale;
-                    ctx.font = `${node.group === 1 ? 'bold' : ''} ${fontSize}px Sans-Serif`;
+                    // Custom Node Rendering
+                    nodeCanvasObject={(node, ctx, globalScale) => {
+                        const label = node.id;
+                        const fontSize = (node.group === 1 ? 16 : 12) / globalScale;
+                        ctx.font = `${node.group === 1 ? 'bold' : ''} ${fontSize}px Sans-Serif`;
 
-                    const textWidth = ctx.measureText(label).width;
-                    const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.5);
+                        const textWidth = ctx.measureText(label).width;
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.5);
 
-                    // Dynamic Colors based on theme
-                    const primaryColor = isDark ? '#8b5cf6' : '#7c3aed'; // Violet
-                    const secondaryColor = isDark ? '#db2777' : '#be185d'; // Pink
+                        // Dynamic Colors based on theme
+                        const primaryColor = isDark ? '#8b5cf6' : '#7c3aed'; // Violet
+                        const secondaryColor = isDark ? '#db2777' : '#be185d'; // Pink
 
-                    const nodeColor = node.group === 1 ? primaryColor : secondaryColor;
-                    const bgColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
+                        const nodeColor = node.group === 1 ? primaryColor : secondaryColor;
+                        const bgColor = isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
 
-                    // Draw Node Circle (behind text)
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, node.val / 3, 0, 2 * Math.PI, false);
-                    ctx.fillStyle = nodeColor;
-                    ctx.fill();
+                        // Draw Node Circle (behind text)
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, node.val / 3, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = nodeColor;
+                        ctx.fill();
 
-                    // Draw Label Background
-                    ctx.fillStyle = bgColor;
-                    ctx.beginPath();
-                    ctx.roundRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2 + (node.group === 1 ? 20 : 15), ...bckgDimensions, 4);
-                    ctx.fill();
+                        // Draw Label Background
+                        ctx.fillStyle = bgColor;
+                        ctx.beginPath();
+                        ctx.roundRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2 + (node.group === 1 ? 20 : 15), ...bckgDimensions, 4);
+                        ctx.fill();
 
-                    // Text Border
-                    ctx.strokeStyle = nodeColor;
-                    ctx.lineWidth = 1 / globalScale;
-                    ctx.stroke();
+                        // Text Border
+                        ctx.strokeStyle = nodeColor;
+                        ctx.lineWidth = 1 / globalScale;
+                        ctx.stroke();
 
-                    // Draw Label Text
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = nodeColor;
-                    ctx.fillText(label, node.x, node.y + (node.group === 1 ? 20 : 15));
-                }}
-            />
+                        // Draw Label Text
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = nodeColor;
+                        ctx.fillText(label, node.x, node.y + (node.group === 1 ? 20 : 15));
+                    }}
+                />
+            </GraphErrorBoundary>
         </div>
     );
 };
