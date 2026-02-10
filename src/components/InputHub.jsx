@@ -18,8 +18,7 @@ const InputHub = ({ onGenerate }) => {
         videoUrl, setVideoUrl,
         isLoading, setLoading,
         error, setError,
-        setProcessedContent, // [NEW] Store Action
-        settings, updateSettings // [NEW] Settings actions
+        setProcessedContent // [NEW] Store Action
     } = useStudyStore();
 
     const [activeTab, setActiveTab] = useState('pdf');
@@ -217,30 +216,9 @@ const InputHub = ({ onGenerate }) => {
                             <ModelSelector />
                         </motion.div>
 
-                        {/* [NEW] Quiz Count Selector */}
-                        <motion.div
-                            data-tour="quiz-settings"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                            className="relative group min-w-[140px]"
-                        >
-                            <select
-                                value={settings.quizCount}
-                                onChange={(e) => updateSettings({ quizCount: Number(e.target.value) })}
-                                className="w-full appearance-none bg-primary/10 hover:bg-primary/20 text-primary text-sm font-bold px-4 py-2 pr-10 rounded-xl border border-primary/20 focus:outline-none focus:border-violet-500 transition-all cursor-pointer shadow-lg backdrop-blur-md"
-                                title="Number of Quiz Questions"
-                            >
-                                {[5, 10, 15, 20].map(n => (
-                                    <option key={n} value={n} className="bg-gray-900 text-white">
-                                        {n} Questions
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
-                                <Settings size={14} />
-                            </div>
-                        </motion.div>
+
+
+
                     </div>
                 </div>
 

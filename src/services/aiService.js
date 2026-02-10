@@ -206,7 +206,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
     **Configuration:**
     - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
     - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
-    - Quiz Question Count: 20 (Generate a comprehensive set covering all topics)
+    - Quiz Question Count: ${quizCount} (Generate a comprehensive set covering all topics)
 
     **Required Output Format (JSON ONLY):**
     {

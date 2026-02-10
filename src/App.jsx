@@ -125,7 +125,7 @@ const App = () => {
   };
 
   return (
-    <div className="relative min-h-screen text-primary overflow-hidden">
+    <div className="relative min-h-screen text-primary overflow-x-hidden">
 
       {/* 3D Background Layer */}
       <Background3D />

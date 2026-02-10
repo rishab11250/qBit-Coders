@@ -95,7 +95,7 @@ const DashboardLayout = () => {
                         ];
 
                         return (
-                            <section className="gsap-stagger">
+                            <section className="gsap-stagger" data-tour="summary-section">
                                 {/* Section Header */}
                                 <div className="mb-8 flex items-center gap-3">
                                     <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ const DashboardLayout = () => {
                     })()}
 
                     {/* Knowledge Graph Section — Premium */}
-                    <section className="gsap-stagger">
+                    <section className="gsap-stagger" data-tour="knowledge-map">
                         {/* Section Header */}
                         <div className="mb-8 flex items-center gap-3">
                             <div className="flex items-center gap-3">
@@ -268,7 +268,7 @@ const DashboardLayout = () => {
                         ];
 
                         return (
-                            <section className="gsap-stagger">
+                            <section className="gsap-stagger" data-tour="summary-section">
                                 {/* Section Header */}
                                 <div className="mb-8 flex items-center gap-3">
                                     <div className="flex items-center gap-3">
@@ -364,7 +364,7 @@ const DashboardLayout = () => {
                     })()}
 
                     {/* Interactive Quiz Section */}
-                    <section className="gsap-stagger">
+                    <section className="gsap-stagger" data-tour="quiz-section">
                         <div className="mb-6 flex items-center gap-3">
                             <h3 className="text-2xl font-bold text-primary">Quiz</h3>
                             <div className="h-px flex-1 bg-primary/10"></div>
@@ -375,12 +375,12 @@ const DashboardLayout = () => {
                     </section>
 
                     {/* Smart Schedule Section */}
-                    <div className="gsap-stagger">
+                    <div className="gsap-stagger" data-tour="schedule-section">
                         <StudySchedule />
                     </div>
 
                     {/* Progress Dashboard Section */}
-                    <section className="gsap-stagger">
+                    <section className="gsap-stagger" data-tour="progress-section">
                         <div className="mb-6 flex items-center gap-3">
                             <BarChart3 size={22} className="text-violet-400" />
                             <h3 className="text-2xl font-bold text-primary">Your Progress</h3>

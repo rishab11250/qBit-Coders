@@ -251,7 +251,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 </div>
                             </div>
                         </div>
-                        {quizData.length < 20 && processedContent?.text && (
+                        {quizData.length < 20 && (processedContent?.text || useStudyStore.getState().extractedText) && (
                             <button
                                 onClick={handleRegenerate}
                                 disabled={isGenerating}

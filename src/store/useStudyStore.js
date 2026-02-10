@@ -59,7 +59,7 @@ const useStudyStore = create(
             settings: {
                 model: DEFAULT_MODEL,
                 difficulty: 'Medium',
-                quizCount: 5,
+                quizCount: 20,
                 theme: 'dark', // Default theme
                 // apiKey removed
             },

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, ArrowRight, Sparkles, ChevronLeft, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TOUR_STEPS = [
+import useStudyStore from '../../store/useStudyStore';
+
+const INPUT_STEPS = [
     {
         title: 'Upload Your Material',
         description: 'Start by uploading PDFs, images, or pasting your lecture notes. The AI will analyze everything.',
@@ -12,7 +14,7 @@ const TOUR_STEPS = [
     {
         title: 'Choose Input Method',
         description: 'Switch between PDFs, images, notes, and YouTube videos using these tabs.',
-        position: 'top', // Changed to top as tabs are inside the area
+        position: 'top',
         selector: '[data-tour="input-tabs"]'
     },
     {
@@ -29,26 +31,75 @@ const TOUR_STEPS = [
     }
 ];
 
+const DASHBOARD_STEPS = [
+    {
+        title: 'Executive Summary',
+        description: 'Get a quick AI-generated overview of your material, broken down into key takeaways and simple explanations.',
+        position: 'bottom',
+        selector: '[data-tour="summary-section"]'
+    },
+    {
+        title: 'Knowledge Map',
+        description: 'Explore concepts visually. Click nodes to expand related ideas and uncover hidden connections.',
+        position: 'top',
+        selector: '[data-tour="knowledge-map"]'
+    },
+    {
+        title: 'Smart Quiz',
+        description: 'Test your knowledge with AI-generated questions. Identifying weak areas here helps refine your study plan.',
+        position: 'top',
+        selector: '[data-tour="quiz-section"]'
+    },
+    {
+        title: 'Study Schedule',
+        description: 'A personalized timeline to help you cover all topics effectively before your exam.',
+        position: 'top',
+        selector: '[data-tour="schedule-section"]'
+    },
+    {
+        title: 'Progress Tracking',
+        description: 'Monitor your quiz scores and topic mastery over time to see where you need to focus.',
+        position: 'top',
+        selector: '[data-tour="progress-section"]'
+    }
+];
+
 const STORAGE_KEY = 'studyflow-tour-seen-v4';
 
 const OnboardingTour = () => {
+    const { currentStep: appStep } = useStudyStore(); // Get current step from store
     const [isActive, setIsActive] = useState(false);
-    const [currentStep, setCurrentStep] = useState(0);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [targetRect, setTargetRect] = useState(null);
     const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
 
+    // Determine which steps to show based on app state
+    const steps = appStep === 'input' ? INPUT_STEPS : DASHBOARD_STEPS;
+
     useEffect(() => {
-        const hasSeen = localStorage.getItem(STORAGE_KEY);
+        // Check local storage for the specific tour version AND context
+        // We can use a composite key like 'studyflow-tour-seen-v4-input' and '...-dashboard'
+        // Or just one key. For now, let's keep it simple: one key for the whole app tour?
+        // Actually, if they generate a plan, they enter 'dashboard', so we might want to show the dashboard tour THEN.
+        // Let's use separate keys for input and dashboard to ensure they see both relevant parts.
+
+        const contextKey = `${STORAGE_KEY}-${appStep}`;
+        const hasSeen = localStorage.getItem(contextKey);
+
         if (!hasSeen) {
-            const timer = setTimeout(() => setIsActive(true), 1500);
+            // Delay start to allow animations to finish
+            const timer = setTimeout(() => {
+                setCurrentStepIndex(0);
+                setIsActive(true);
+            }, 1500);
             return () => clearTimeout(timer);
         }
-    }, []);
+    }, [appStep]);
 
     const updatePosition = useCallback(() => {
-        if (!isActive) return;
+        if (!isActive || !steps[currentStepIndex]) return;
 
-        const step = TOUR_STEPS[currentStep];
+        const step = steps[currentStepIndex];
         const el = document.querySelector(step.selector);
 
         if (el && el.offsetParent !== null) {
@@ -95,14 +146,14 @@ const OnboardingTour = () => {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         } else {
-            // Fallback: Center screen
+            // Fallback: Center screen or hide if element not found (e.g. slight delay in rendering)
             setTargetRect(null);
             setTooltipPos({
                 top: window.innerHeight / 2 + window.scrollY - 100,
                 left: window.innerWidth / 2 - 160
             });
         }
-    }, [currentStep, isActive]);
+    }, [currentStepIndex, isActive, steps]);
 
     useEffect(() => {
         if (isActive) {
@@ -120,24 +171,25 @@ const OnboardingTour = () => {
 
     const completeTour = () => {
         setIsActive(false);
-        localStorage.setItem(STORAGE_KEY, 'true');
+        const contextKey = `${STORAGE_KEY}-${appStep}`;
+        localStorage.setItem(contextKey, 'true');
     };
 
     const nextStep = () => {
-        if (currentStep + 1 >= TOUR_STEPS.length) {
+        if (currentStepIndex + 1 >= steps.length) {
             completeTour();
         } else {
-            setCurrentStep(s => s + 1);
+            setCurrentStepIndex(s => s + 1);
         }
     };
 
     const prevStep = () => {
-        if (currentStep > 0) setCurrentStep(s => s - 1);
+        if (currentStepIndex > 0) setCurrentStepIndex(s => s - 1);
     };
 
     useEffect(() => {
         const handleManualStart = () => {
-            setCurrentStep(0);
+            setCurrentStepIndex(0);
             setIsActive(true);
         };
         window.addEventListener('start-onboarding', handleManualStart);
@@ -145,7 +197,8 @@ const OnboardingTour = () => {
     }, []);
 
     if (!isActive) return null;
-    const step = TOUR_STEPS[currentStep];
+    const step = steps[currentStepIndex];
+    if (!step) return null; // Safety check
 
     return (
         <div className="fixed inset-0 z-[9999]" style={{ pointerEvents: 'auto' }}>
@@ -169,7 +222,7 @@ const OnboardingTour = () => {
             {/* Tooltip */}
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={currentStep}
+                    key={currentStepIndex}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -182,7 +235,7 @@ const OnboardingTour = () => {
                             <div className="flex items-center gap-2">
                                 <Sparkles size={14} className="text-violet-400" />
                                 <span className="text-[10px] font-semibold text-violet-400 uppercase tracking-widest">
-                                    Step {currentStep + 1} of {TOUR_STEPS.length}
+                                    Step {currentStepIndex + 1} of {steps.length}
                                 </span>
                             </div>
                             <button onClick={completeTour} className="text-secondary hover:text-primary p-1 rounded-lg hover:bg-white/5 transition-colors">
