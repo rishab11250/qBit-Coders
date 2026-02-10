@@ -32,12 +32,55 @@ class GraphErrorBoundary extends React.Component {
 }
 
 /* =========================================================
+   COLOR PALETTE — for node hierarchy
+========================================================= */
+const NODE_STYLES = {
+    root: {
+        bgGradient: ['#7c3aed', '#6d28d9'],  // Violet
+        stroke: '#a78bfa',
+        textFill: '#f5f3ff',
+        glowColor: 'rgba(139,92,246,0.25)',
+        fontSize: 16,
+        fontWeight: '700',
+        paddingX: 28,
+        paddingY: 14,
+        borderRadius: 14,
+        strokeWidth: 2,
+    },
+    main: {
+        bgGradient: ['#0891b2', '#0e7490'],  // Cyan
+        stroke: '#22d3ee',
+        textFill: '#ecfeff',
+        glowColor: 'rgba(6,182,212,0.2)',
+        fontSize: 14,
+        fontWeight: '600',
+        paddingX: 22,
+        paddingY: 11,
+        borderRadius: 12,
+        strokeWidth: 1.5,
+    },
+    child: {
+        bgGradient: ['#1e293b', '#334155'],  // Slate
+        stroke: '#475569',
+        textFill: '#cbd5e1',
+        glowColor: 'rgba(100,116,139,0.15)',
+        fontSize: 12,
+        fontWeight: '500',
+        paddingX: 16,
+        paddingY: 9,
+        borderRadius: 10,
+        strokeWidth: 1,
+    },
+};
+
+/* =========================================================
    MAIN COMPONENT
 ========================================================= */
 const ConceptGraph = ({ concepts }) => {
-    const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+    const [dimensions, setDimensions] = useState({ width: 800, height: 550 });
     const containerRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [hoveredNode, setHoveredNode] = useState(null);
 
     // --- Resize Observer ---
     useEffect(() => {
@@ -60,14 +103,12 @@ const ConceptGraph = ({ concepts }) => {
     const treeData = useMemo(() => {
         if (!concepts || concepts.length === 0) return null;
 
-        // Create a root node
         const root = {
             name: "Key Concepts",
             attributes: { isRoot: true },
             children: []
         };
 
-        // Take top 5 concepts as parents
         const topConcepts = concepts.slice(0, 5);
 
         topConcepts.forEach(concept => {
@@ -78,7 +119,6 @@ const ConceptGraph = ({ concepts }) => {
                 children: []
             };
 
-            // Add related concepts as children (fallback logic)
             if (concept.related && Array.isArray(concept.related)) {
                 concept.related.slice(0, 4).forEach(rel => {
                     node.children.push({
@@ -87,7 +127,6 @@ const ConceptGraph = ({ concepts }) => {
                     });
                 });
             } else {
-                // Fallback: find other concepts
                 const others = concepts.filter(c => (c.name || c) !== name).slice(0, 3);
                 others.forEach(o => {
                     node.children.push({
@@ -105,75 +144,134 @@ const ConceptGraph = ({ concepts }) => {
     // --- Helper: Truncate Text ---
     const truncate = (str, n) => {
         if (!str) return "";
-        return str.length > n ? str.slice(0, n - 1) + "..." : str;
+        return str.length > n ? str.slice(0, n - 1) + "…" : str;
     };
 
-    // --- Custom Node Renderer (Pill Style) ---
+    // --- Custom Node Renderer (Premium Pill Style) ---
     const renderCustomNodeElement = ({ nodeDatum, toggleNode }) => {
         const isRoot = nodeDatum.attributes?.isRoot;
         const isMain = nodeDatum.attributes?.group === "main";
 
-        // 1. Label
+        const style = isRoot ? NODE_STYLES.root : (isMain ? NODE_STYLES.main : NODE_STYLES.child);
         const fullLabel = nodeDatum.name;
         const displayLabel = truncate(fullLabel, 24);
+        const nodeId = nodeDatum.name;
+        const isHovered = hoveredNode === nodeId;
 
-        // 2. Style Config (Sizing)
-        const fontSize = isRoot ? 16 : (isMain ? 14 : 12);
-        const fontWeight = isRoot || isMain ? "600" : "500";
-        const paddingX = isRoot ? 24 : (isMain ? 20 : 16);
-        const paddingY = isRoot ? 12 : (isMain ? 10 : 8);
-        const borderRadius = 8;
-
-        // Approx width (font-dependent, 0.6em avg char width)
-        const charWidth = fontSize * 0.6;
+        // Calculate dimensions
+        const charWidth = style.fontSize * 0.58;
         const textWidth = displayLabel.length * charWidth;
-        const width = textWidth + (paddingX * 2);
-        const height = fontSize + (paddingY * 2);
+        const width = textWidth + (style.paddingX * 2);
+        const height = style.fontSize + (style.paddingY * 2);
 
-        // 3. Color Hierarchy
-        // Root = Purple, Parents = Indigo, Children = Slate
-        let fill = "#0f172a"; // Slate-900 (Default BG)
-        let stroke = "#334155"; // Slate-700 (Default Border)
-        let textFill = "#cbd5e1"; // Slate-300 (Default Text)
-
-        if (isRoot) {
-            fill = "#2e1065"; // Purple-950 (optional deep bg)
-            stroke = "#a855f7"; // Purple-500
-            textFill = "#f3e8ff"; // Purple-100
-        } else if (isMain) {
-            fill = "#1e1b4b"; // Indigo-950
-            stroke = "#6366f1"; // Indigo-500
-            textFill = "#e0e7ff"; // Indigo-100
-        }
+        // Gradient ID
+        const gradientId = `grad-${nodeId.replace(/\s+/g, '-')}-${isRoot ? 'root' : isMain ? 'main' : 'child'}`;
+        const filterId = `glow-${nodeId.replace(/\s+/g, '-')}`;
 
         return (
-            <g>
+            <g
+                onMouseEnter={() => setHoveredNode(nodeId)}
+                onMouseLeave={() => setHoveredNode(null)}
+                style={{ cursor: "pointer" }}
+            >
+                {/* Gradient Definition */}
+                <defs>
+                    <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={style.bgGradient[0]} />
+                        <stop offset="100%" stopColor={style.bgGradient[1]} />
+                    </linearGradient>
+                    <filter id={filterId}>
+                        <feDropShadow dx="0" dy="2" stdDeviation={isHovered ? "6" : "3"} floodColor={style.glowColor} floodOpacity={isHovered ? "0.6" : "0.3"} />
+                    </filter>
+                </defs>
+
+                {/* Hover glow ring */}
+                {isHovered && (
+                    <rect
+                        width={width + 8}
+                        height={height + 8}
+                        x={-(width + 8) / 2}
+                        y={-(height + 8) / 2}
+                        rx={style.borderRadius + 4}
+                        fill="none"
+                        stroke={style.stroke}
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
+                )}
+
+                {/* Main Node */}
                 <rect
                     width={width}
                     height={height}
                     x={-width / 2}
                     y={-height / 2}
-                    rx={borderRadius}
-                    fill={fill}
-                    stroke={stroke}
-                    strokeWidth={isRoot || isMain ? 2 : 1}
+                    rx={style.borderRadius}
+                    fill={`url(#${gradientId})`}
+                    stroke={style.stroke}
+                    strokeWidth={style.strokeWidth}
+                    filter={`url(#${filterId})`}
                     onClick={toggleNode}
-                    style={{ cursor: "pointer" }}
+                    style={{
+                        transition: 'all 0.3s ease',
+                        transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+                        transformOrigin: 'center center',
+                    }}
                 />
+
+                {/* Icon dot for main nodes */}
+                {(isRoot || isMain) && (
+                    <circle
+                        cx={-width / 2 + 14}
+                        cy={0}
+                        r={3}
+                        fill={style.textFill}
+                        opacity={0.6}
+                    />
+                )}
+
+                {/* Text Label */}
                 <text
-                    fill={textFill}
+                    fill={style.textFill}
                     strokeWidth="0"
-                    x="0"
+                    x={(isRoot || isMain) ? 6 : 0}
                     y="0"
                     dy=".35em"
-                    fontSize={fontSize}
-                    fontWeight={fontWeight}
+                    fontSize={style.fontSize}
+                    fontWeight={style.fontWeight}
+                    fontFamily="'Outfit', sans-serif"
                     textAnchor="middle"
                     onClick={toggleNode}
-                    style={{ cursor: "pointer", pointerEvents: "none" }} // Click through
+                    style={{ cursor: "pointer", pointerEvents: "none", letterSpacing: '0.01em' }}
                 >
                     {displayLabel}
                 </text>
+
+                {/* Children count badge for collapsible nodes */}
+                {nodeDatum.children && nodeDatum.children.length > 0 && (
+                    <g>
+                        <circle
+                            cx={width / 2 - 2}
+                            cy={-height / 2 + 2}
+                            r={9}
+                            fill={style.bgGradient[0]}
+                            stroke={style.stroke}
+                            strokeWidth={1}
+                        />
+                        <text
+                            x={width / 2 - 2}
+                            y={-height / 2 + 2}
+                            dy=".35em"
+                            textAnchor="middle"
+                            fontSize={9}
+                            fontWeight="700"
+                            fill={style.textFill}
+                            style={{ pointerEvents: "none" }}
+                        >
+                            {nodeDatum.children.length}
+                        </text>
+                    </g>
+                )}
             </g>
         );
     };
@@ -183,43 +281,48 @@ const ConceptGraph = ({ concepts }) => {
     return (
         <div
             ref={containerRef}
-            className="w-full h-[500px] bg-[var(--bg-secondary)] rounded-2xl overflow-hidden relative"
-            style={{ border: 'none', boxShadow: 'none', cursor: isDragging ? "grabbing" : "grab" }}
+            className="w-full h-full rounded-2xl overflow-hidden relative"
+            style={{ cursor: isDragging ? "grabbing" : "grab" }}
             onMouseDown={() => setIsDragging(true)}
             onMouseUp={() => setIsDragging(false)}
-            onMouseLeave={() => setIsDragging(false)}
+            onMouseLeave={() => { setIsDragging(false); setHoveredNode(null); }}
         >
+            {/* SVG CSS for custom links */}
+            <style>{`
+                .concept-tree-link {
+                    stroke: rgba(100, 116, 139, 0.25) !important;
+                    stroke-width: 1.5px !important;
+                    fill: none !important;
+                    transition: stroke 0.3s ease;
+                }
+                .concept-tree-link:hover {
+                    stroke: rgba(139, 92, 246, 0.5) !important;
+                    stroke-width: 2px !important;
+                }
+            `}</style>
+
             <GraphErrorBoundary>
                 <Tree
                     data={treeData}
                     orientation="vertical"
-                    pathFunc="step" // Clean right angles
+                    pathFunc="step"
                     translate={{ x: dimensions.width / 2, y: 80 }}
 
-                    // --- Sizing & Spacing ---
-                    nodeSize={{ x: 340, y: 140 }}
+                    nodeSize={{ x: 340, y: 150 }}
                     separation={{ siblings: 2.7, nonSiblings: 3.2 }}
 
-                    // --- Styling ---
                     renderCustomNodeElement={renderCustomNodeElement}
                     enableLegacyTransitions={true}
-                    transitionDuration={300} // Fast snap
+                    transitionDuration={400}
 
-                    // --- Links ---
                     zoomable={true}
                     draggable={true}
                     depthFactor={undefined}
+                    scaleExtent={{ min: 0.3, max: 2 }}
 
-                    // --- Link Styling via CSS Class ---
-                    pathClassFunc={() => "tree-link"}
+                    pathClassFunc={() => "concept-tree-link"}
                 />
             </GraphErrorBoundary>
-
-            {/* Status / Instructions */}
-            <div className="absolute top-6 right-6 flex items-center gap-3 whitespace-nowrap z-10 pointer-events-none">
-                <span className="text-xs font-medium text-slate-500 opacity-60">Interactive Tree Graph</span>
-                <span className="text-xs text-slate-600 opacity-50">Click to collapse • Drag to pan</span>
-            </div>
         </div>
     );
 };
