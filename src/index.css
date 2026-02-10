@@ -3,10 +3,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 /* Global Variables */
-@theme {
+@theme inline {
   --color-primary: var(--text-primary);
   --color-secondary: var(--text-secondary);
   --color-accent: var(--accent-primary);
+  --color-surface: var(--bg-secondary);
   --color-bg-dark: #0f172a;
 
   --font-sans: 'Outfit', sans-serif;
@@ -40,21 +41,31 @@
 }
 
 body[data-theme='light'] {
-  --bg-primary: #FDFBF7;
-  /* Cream / Off-White */
-  --bg-secondary: #EEE6D8;
-  /* Beige / Tan */
-  --text-primary: #1A1A1A;
-  /* Dark Grey / Black */
-  --text-secondary: #4A4A4A;
-  /* Medium Grey */
+  /* Cloud/Sky Palette */
+  --bg-primary: #F0F9FF;
+  /* Sky 50 */
+  --bg-secondary: rgba(255, 255, 255, 0.8);
+  --text-primary: #2D2D2D;
+  /* Dark Grey */
+  /* Pure Black for maximum contrast */
+  --text-secondary: #334155;
+  /* Slate 700 */
+
   --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(26, 26, 26, 0.1);
-  /* Subtle dark border */
-  --accent-primary: #FF8800;
-  /* Vivid Orange */
-  --accent-teal: #14b8a6;
-  /* Preserved for success states */
+  --glass-border: rgba(0, 0, 0, 0.05);
+  /* Much subtler border */
+
+  --accent-primary: #0EA5E9;
+  /* Sky 500 */
+
+  /* Cloud Background Pattern */
+  background-color: #E0F2FE;
+  background-image:
+    radial-gradient(at 20% 0%, rgba(255, 255, 255, 0.9) 0px, transparent 50%),
+    radial-gradient(at 10% 80%, rgba(255, 255, 255, 0.8) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(255, 255, 255, 0.9) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
 }
 
 body {

@@ -130,6 +130,26 @@ const InputHub = ({ onGenerate }) => {
 
                 {/* Hero Text */}
                 <div className="text-center mb-12">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-primary mb-6"
+                    >
+                        Master any subject <br />
+                        in <span className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 drop-shadow-[0_0_20px_rgba(56,189,248,0.3)]">Minutes</span>, not in Hours.
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className="text-lg md:text-xl text-secondary max-w-2xl mx-auto mb-10"
+                    >
+                        Upload your course materials, lecture notes, or YouTube videos.
+                        Our AI creates personalized study plans instantly.
+                    </motion.p>
+
                     <div className="flex justify-center gap-4 mb-6">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -150,28 +170,6 @@ const InputHub = ({ onGenerate }) => {
                             <ModelSelector />
                         </motion.div>
                     </div>
-
-                    <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-primary mb-6"
-                    >
-                        Master any subject <br />
-                        <span className="text-primary font-bold">
-                            in minutes.
-                        </span>
-                    </motion.h1>
-
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        className="text-lg md:text-xl text-secondary max-w-2xl mx-auto"
-                    >
-                        Upload your course materials, lecture notes, or YouTube videos.
-                        Our AI creates personalized study plans instantly.
-                    </motion.p>
                 </div>
 
                 {/* Glass Input Card */}
@@ -332,12 +330,12 @@ const InputHub = ({ onGenerate }) => {
                         <Button
                             variant="primary"
                             size="lg"
-                            className="w-full sm:w-auto min-w-[200px] btn-primary text-lg shadow-indigo-200 shadow-xl"
+                            className="w-full sm:w-auto min-w-[200px] text-lg shadow-xl hover:shadow-2xl hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 bg-gradient-to-r from-violet-600 to-indigo-600 border border-white/20"
                             onClick={handleMainGenerate}
                             disabled={!isReady() || isLoading}
                             isLoading={isLoading}
                         >
-                            Generate Study Plan <ArrowRight size={20} className="ml-2" />
+                            Generate Study Plan <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                     </div>
                 </motion.div>

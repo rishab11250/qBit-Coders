@@ -12,7 +12,7 @@ const Button = ({
     type = 'button',
     ...props
 }) => {
-    const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+    const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
 
     const variants = {
         primary: "bg-[var(--accent-primary)] text-white hover:opacity-90 shadow-md hover:shadow-lg active:scale-95 hover:scale-105 transition-all duration-300",
