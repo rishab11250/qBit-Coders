@@ -23,7 +23,6 @@ const useStudyStore = create(
             topics: [],
             concepts: [],
             quiz: [],
-            quiz: [],
             weakAreas: [],
 
             // Schedule State (Logic Domain)
@@ -41,7 +40,7 @@ const useStudyStore = create(
             // Settings State
             settings: {
                 apiKey: '',
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.5-flash-lite',
                 difficulty: 'Intermediate',
                 quizCount: 5
             },
