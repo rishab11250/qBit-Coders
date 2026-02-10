@@ -309,7 +309,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
 /**
  * Low-level function to call Gemini API directly.
- * Useful for intermediate processing steps (like video transcription or OCR).
+ * Useful for intermediate processing steps.
  * 
  * @param {string} systemPrompt 
  * @param {string} userPrompt 
@@ -321,6 +321,7 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
 
   const parts = [{ text: systemPrompt }];
 
+  // Standard flow: inline file data (for images/PDFs/etc)
   if (fileData) {
     parts.push({
       inlineData: {
@@ -330,11 +331,13 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
     });
   }
 
+  // Always include the user prompt text
   parts.push({ text: userPrompt });
 
   try {
     const response = await executeGeminiRequest({
       contents: [{ parts: parts }]
+      // No tools needed since we provided the transcript!
     });
 
     const data = await response.json();
@@ -450,3 +453,4 @@ export async function generateSchedule(content, days, hoursPerDay) {
     return null;
   }
 }
+// End of file

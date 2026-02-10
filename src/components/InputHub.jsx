@@ -304,9 +304,24 @@ const InputHub = ({ onGenerate }) => {
                                             onChange={(e) => setVideoUrl(e.target.value)}
                                         />
                                     </div>
-                                    <p className="text-center text-gray-400 text-sm mt-6">
+                                    <p className="text-center text-gray-400 text-sm mt-4">
                                         Supports public YouTube videos with captions.
                                     </p>
+
+                                    {/* Pro Tip Alert */}
+                                    <div className="mt-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-left">
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-1 mt-0.5 bg-violet-500/20 rounded-md">
+                                                <Sparkles size={14} className="text-violet-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-violet-200 text-sm font-medium mb-1">For Full Courses & Long Videos:</p>
+                                                <p className="text-violet-300/80 text-xs leading-relaxed">
+                                                    AI browsing has limits. For 100% accuracy on long content (like CS50), we recommend copying the <strong>Transcript</strong> and pasting it in the <button onClick={() => setActiveTab('notes')} className="text-white hover:underline underline-offset-2">Paste Notes</button> tab.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
