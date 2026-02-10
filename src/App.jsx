@@ -3,13 +3,11 @@ import useStudyStore from './store/useStudyStore';
 import Navbar from './components/layout/Navbar';
 import InputHub from './components/InputHub';
 import DashboardLayout from './components/features/DashboardLayout';
+import Background3D from './components/ui/Background3D';
 import { generateStudyContent, fileToBase64 } from './services/aiService';
 
 const App = () => {
   const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError } = useStudyStore();
-
-  // DEBUG: Seed dummy data for immediate UI testing
-  // useEffect removed for production AI integration
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -24,7 +22,7 @@ const App = () => {
         const base64 = await fileToBase64(pdfFile);
         result = await generateStudyContent('pdf', base64, pdfFile.type);
       }
-      // 2. Extracted Text (from Pipeline if PDF text only is preferred, or fallback)
+      // 2. Extracted Text
       else if (extractedText && extractedText.length > 0) {
         console.log("Generating from Extracted Text...");
         result = await generateStudyContent('text', extractedText);
@@ -42,7 +40,6 @@ const App = () => {
       }
 
       if (result) {
-        // Ensure result has all fields to prevent UI errors
         const safeResult = {
           summary: result.summary || "No summary available.",
           topics: result.topics || [],
@@ -55,35 +52,34 @@ const App = () => {
       }
 
     } catch (e) {
-      console.error("Geneation Failed:", e);
+      console.error("Generated Failed:", e);
       setError("Failed to generate content. Please try again or check your API key.");
-    } finally {
-      // Loading is set to false by setStudyData or we do it here if error
-      // But setStudyData sets loading to false. 
-      // If error, we strictly set it to false.
-      // We can't check store state easily here, so calling setLoading(false) is safe if setStudyData wasn't called.
-      // Actually setStudyData handles it. If error, we need to manually turn off loading.
-      // Let's do it conditionally or just rely on the store update if success.
+      setLoading(false); // Ensure loading stops on error
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
-      <Navbar />
+    <div className="relative min-h-screen text-white overflow-hidden">
 
-      <main className="flex-1 pt-16">
-        {currentStep === 'input' ? (
-          <InputHub onGenerate={handleGenerate} />
-        ) : (
-          <DashboardLayout />
-        )}
-      </main>
+      {/* 3D Background Layer */}
+      <Background3D />
 
-      <footer className="bg-white border-t border-gray-100 py-8">
-        <div className="max-w-7xl mx-auto px-6 text-center text-gray-400 text-sm">
+      {/* Main Content Layer */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <Navbar />
+
+        <main className="flex-1 pt-24">
+          {currentStep === 'input' ? (
+            <InputHub onGenerate={handleGenerate} />
+          ) : (
+            <DashboardLayout />
+          )}
+        </main>
+
+        <footer className="py-8 text-center text-slate-500 text-sm">
           <p>© 2024 StudyFlow AI. Built for qBit-Coders.</p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 };
