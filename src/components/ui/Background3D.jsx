@@ -7,7 +7,7 @@ import useStudyStore from '../../store/useStudyStore';
 
 const Stars = (props) => {
     const ref = useRef();
-    const sphere = useMemo(() => random.inSphere(new Float32Array(5000), { radius: 1.5 }), []);
+    const sphere = useMemo(() => random.inSphere(new Float32Array(6000), { radius: 1.5 }), []);
     const { settings } = useStudyStore();
     const isDark = settings.theme === 'dark';
 
