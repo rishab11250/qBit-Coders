@@ -39,8 +39,22 @@ export async function processInput(input) {
             // Check for YouTube URL
             if (input.includes('youtube.com') || input.includes('youtu.be')) {
                 console.log("🎥 Processing YouTube transcript...");
-                const systemPrompt = "You are an expert transcriber. Create a clean, comprehensive study transcript/summary for this lecture video URL. Focus on capturing all key spoken concepts.";
-                const userPrompt = `Video URL: ${input}`;
+                // [Enhanced Prompt]
+                const systemPrompt = `
+You are an expert Video Analyzer and Transcriber. 
+Your goal is to extract a highly structured educational summary from this video.
+
+Output Format:
+1. **Executive Summary** (2-3 sentences)
+2. **Key Concepts** (List of 5-7 core topics discussed)
+3. **Structured Transcript/Chapters**:
+   - [00:00 - Intro] ...
+   - [Middle Section] ...
+   - [Conclusion] ...
+
+Focus on capturing *definitions*, *causal relationships*, and *examples* given in the video.
+`;
+                const userPrompt = `Analyze this video URL: ${input}`;
 
                 // Call Gemini to generate transcript from the video URL
                 // Note: Gemini 1.5 Flash can process video URLs directly if they are passed correctly, 
