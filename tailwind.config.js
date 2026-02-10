@@ -7,14 +7,7 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: {
-                    50: '#eef2ff',
-                    100: '#e0e7ff',
-                    500: '#6366f1',
-                    600: '#4f46e5',
-                    700: '#4338ca',
-                },
-                surface: '#ffffff',
+                // Removed: Colors are now defined in src/index.css via @theme for full v4 support
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],

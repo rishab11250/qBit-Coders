@@ -90,7 +90,7 @@ const StudySchedule = () => {
                                     min={new Date().toISOString().split('T')[0]}
                                     value={deadline}
                                     onChange={(e) => setDeadline(e.target.value)}
-                                    className="pl-12 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-primary w-full focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] outline-none transition-all"
+                                    className="pl-12 pr-4 py-3 rounded-xl bg-primary/5 border border-primary/10 text-primary w-full focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -104,7 +104,7 @@ const StudySchedule = () => {
                                     min="1" max="12"
                                     value={hoursPerDay}
                                     onChange={(e) => setHoursPerDay(e.target.value)}
-                                    className="pl-12 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-primary w-full focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] outline-none transition-all"
+                                    className="pl-12 pr-4 py-3 rounded-xl bg-primary/5 border border-primary/10 text-primary w-full focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -123,7 +123,7 @@ const StudySchedule = () => {
             )}
 
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm flex items-center justify-center gap-2">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-center justify-center gap-2">
                     <AlertCircle size={16} /> {error}
                 </div>
             )}
@@ -144,7 +144,7 @@ const StudySchedule = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => setSchedule(null)}
-                            className="text-secondary hover:text-white text-xs"
+                            className="text-secondary hover:text-primary text-xs"
                         >
                             Reset Plan
                         </Button>
@@ -154,10 +154,10 @@ const StudySchedule = () => {
                         {studySchedule.schedule.map((dayPlan, index) => (
                             <div
                                 key={index}
-                                className="gsap-card group relative overflow-hidden rounded-2xl bg-[var(--bg-secondary)] border border-white/5 hover:border-[var(--accent-primary)] transition-all duration-300 hover:-translate-y-1 p-6 h-full"
+                                className="gsap-card group relative overflow-hidden rounded-2xl bg-[var(--bg-secondary)] border border-primary/5 hover:border-[var(--accent-primary)] transition-all duration-300 hover:-translate-y-1 p-6 h-full"
                             >
                                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <span className="text-4xl font-bold text-white">{dayPlan.day}</span>
+                                    <span className="text-4xl font-bold text-primary">{dayPlan.day}</span>
                                 </div>
 
                                 <div className="relative z-10 flex flex-col h-full">
@@ -167,7 +167,7 @@ const StudySchedule = () => {
                                     <div className="space-y-3 flex-grow">
                                         {dayPlan.tasks.map((task, tIndex) => (
                                             <div key={tIndex} className="flex items-start gap-3">
-                                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-[var(--accent-teal)] transition-colors flex-shrink-0"></div>
+                                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/20 group-hover:bg-[var(--accent-teal)] transition-colors flex-shrink-0"></div>
                                                 <div>
                                                     <p className="text-sm text-secondary group-hover:text-primary transition-colors">{task.activity}</p>
                                                     <p className="text-[10px] font-mono text-secondary/60 mt-0.5">{task.time}</p>

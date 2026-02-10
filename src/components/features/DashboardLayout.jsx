@@ -51,31 +51,31 @@ const DashboardLayout = () => {
                     <section className="gsap-stagger">
                         <div className="mb-6 flex items-center gap-3">
                             <h3 className="text-2xl font-bold text-primary">Executive Summary</h3>
-                            <div className="h-px flex-1 bg-white/10"></div>
+                            <div className="h-px flex-1 bg-primary/10"></div>
                         </div>
 
                         <div className="glass-panel rounded-2xl p-8 md:p-10 relative overflow-hidden group">
                             {/* Decorative ambient glow */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
 
-                            <div className="relative z-10 prose prose-invert max-w-none text-white/80 text-lg leading-relaxed">
+                            <div className="relative z-10 prose max-w-none text-secondary text-lg leading-relaxed">
                                 {typeof summary === 'object' && summary !== null ? (
                                     <div className="space-y-8">
                                         {summary.simple_explanation && (
                                             <div>
                                                 <h4 className="text-sm font-semibold text-[var(--accent-primary)] uppercase tracking-wider mb-3">In Simple Terms</h4>
-                                                <p className="text-white text-xl font-light leading-relaxed">{summary.simple_explanation}</p>
+                                                <p className="text-primary text-xl font-light leading-relaxed">{summary.simple_explanation}</p>
                                             </div>
                                         )}
                                         {summary.executive_brief && (
-                                            <div className="pt-6 border-t border-white/5">
-                                                <h4 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">Key Takeaways</h4>
+                                            <div className="pt-6 border-t border-primary/5">
+                                                <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">Key Takeaways</h4>
                                                 {Array.isArray(summary.executive_brief) ? (
                                                     <ul className="grid md:grid-cols-2 gap-4 list-none pl-0">
                                                         {summary.executive_brief.map((item, i) => (
                                                             <li key={i} className="flex gap-3 items-start">
                                                                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-teal)] flex-shrink-0"></span>
-                                                                <span className="text-white/90">{item}</span>
+                                                                <span className="text-primary/90">{item}</span>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -86,7 +86,7 @@ const DashboardLayout = () => {
                                         )}
                                     </div>
                                 ) : (
-                                    <p className="text-white text-xl font-light">{summary}</p>
+                                    <p className="text-primary text-xl font-light">{summary}</p>
                                 )}
                             </div>
                         </div>
@@ -96,11 +96,11 @@ const DashboardLayout = () => {
                     <section className="gsap-stagger">
                         <div className="mb-6 flex items-center gap-3">
                             <h3 className="text-2xl font-bold text-primary">Knowledge Map</h3>
-                            <div className="h-px flex-1 bg-white/10"></div>
+                            <div className="h-px flex-1 bg-primary/10"></div>
                         </div>
 
-                        <div className="h-[500px] w-full rounded-2xl border border-white/5 bg-[var(--bg-secondary)] overflow-hidden relative">
-                            <div className="absolute top-4 left-4 z-10 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 text-xs text-secondary">
+                        <div className="h-[500px] w-full rounded-2xl border border-primary/5 bg-[var(--bg-secondary)] overflow-hidden relative">
+                            <div className="absolute top-4 left-4 z-10 bg-[var(--bg-secondary)]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-primary/5 text-xs text-secondary shadow-sm">
                                 Interactive Tree Graph
                             </div>
                             <ConceptGraph concepts={concepts} />
@@ -112,14 +112,14 @@ const DashboardLayout = () => {
                         <section className="gsap-stagger">
                             <div className="mb-6 flex items-center gap-3">
                                 <h3 className="text-2xl font-bold text-primary">Focus Areas</h3>
-                                <div className="h-px flex-1 bg-white/10"></div>
+                                <div className="h-px flex-1 bg-primary/10"></div>
                             </div>
 
                             <div className="glass-panel p-8 rounded-2xl border-l-4 border-l-[var(--accent-rose)]">
                                 <p className="text-secondary mb-6">Based on your input, we've identified these key topics that may require extra attention:</p>
                                 <div className="flex flex-wrap gap-3">
                                     {weakAreas.map((area, i) => (
-                                        <div key={i} className="px-5 py-2.5 bg-[var(--bg-primary)] text-primary border border-white/10 rounded-lg text-sm font-medium">
+                                        <div key={i} className="px-5 py-2.5 bg-[var(--bg-primary)] text-primary border border-primary/10 rounded-lg text-sm font-medium">
                                             {area}
                                         </div>
                                     ))}
@@ -132,7 +132,7 @@ const DashboardLayout = () => {
                     <section className="gsap-stagger">
                         <div className="mb-6 flex items-center gap-3">
                             <h3 className="text-2xl font-bold text-primary">Quiz</h3>
-                            <div className="h-px flex-1 bg-white/10"></div>
+                            <div className="h-px flex-1 bg-primary/10"></div>
                         </div>
                         <div className="glass-panel rounded-2xl p-1">
                             <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
