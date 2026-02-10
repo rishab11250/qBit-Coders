@@ -49,12 +49,25 @@ export async function processInput(input) {
             // Check for YouTube URL
             if (input.includes('youtube.com') || input.includes('youtu.be')) {
                 console.log("🎥 Processing YouTube transcript...");
-                // [Enhanced Prompt]
+                // [Enhanced Prompt for Long Videos & Error Handling]
                 const systemPrompt = `
 You are an expert Video Analyzer and Transcriber. 
 Your goal is to extract a highly structured educational summary from this video.
 
-Output Format:
+**CRITICAL INSTRUCTION FOR LONG VIDEOS (>1 HOUR):**
+If the video is a "Full Course" or >1 hour, **DO NOT** just summarize the first 10 minutes.
+Instead, provide a **SYLLABUS** style overview of the ENTIRE video content.
+List the major modules/chapters in order (e.g. Intro -> Concepts -> Advanced -> Conclusion).
+
+**CRITICAL CONSTRAINT - INCOMPLETE CONTENT:**
+If you cannot access or process the FULL content of the video (e.g., if you only see the first few minutes), respond immediately with: "ERROR: INCOMPLETE_CONTENT".
+Do NOT try to fake a summary.
+
+**ERROR HANDLING:**
+- If captions/subtitles are unavailable/missing, respond with: "ERROR: NO_CAPTIONS"
+- If the video is private or inaccessible, respond with: "ERROR: ACCESS_DENIED"
+
+**Output Format (if successful):**
 1. **Executive Summary** (2-3 sentences)
 2. **Key Concepts** (List of 5-7 core topics discussed)
 3. **Structured Transcript/Chapters**:
@@ -62,28 +75,49 @@ Output Format:
    - [Middle Section] ...
    - [Conclusion] ...
 
-Focus on capturing *definitions*, *causal relationships*, and *examples* given in the video.
+Focus on capturing *definitions*, *causal relationships*, and *examples*.
 `;
                 const userPrompt = `Analyze this video URL: ${input}`;
 
-                // Call Gemini to generate transcript from the video URL
-                // Note: Gemini 1.5 Flash can process video URLs directly if they are passed correctly, 
-                // but here we are using the text-based callGemini which expects a prompt.
-                // Ideally, we'd use the multimodal input, but for now we'll ask it to "watch" and summarize if accessible,
-                // or if we had the transcript text we'd pass that. 
-                // Since we don't have a transcript fetcher, we rely on Gemini's ability to access or hallucinate (safeguard needed).
-                // BETTER APPROACH: For this demo, we can ask Gemini to "Explain the concepts usually found in this video topic" if it can't watch it,
-                // but let's try the direct prompt first.
-
                 rawText = await callGemini(systemPrompt, userPrompt);
 
-                const failureKeywords = [
-                    "cannot access", "unable to access", "i cannot watch", "text-based ai",
-                    "don't have access", "no transcript", "no subtitles", "caption unavailable"
-                ];
-                if (failureKeywords.some(k => rawText.toLowerCase().includes(k)) || rawText.length < 50) {
-                    throw new Error("Unable to process video: Missing captions or access restricted. Please paste the transcript/notes manually.");
+                // [Validation: Deterministic & Strict] - Validates ONLY the returned transcript text.
+
+                // 1. Check for explicit error codes from the AI prompt logic
+                const errorMap = {
+                    "ERROR: INCOMPLETE_CONTENT": "Video is too long to process fully. Please try a shorter video or paste the transcript.",
+                    "ERROR: NO_CAPTIONS": "This video has no captions/subtitles, which are required for analysis.",
+                    "ERROR: ACCESS_DENIED": "Unable to access this video. It might be private or region-locked."
+                };
+
+                for (const [key, msg] of Object.entries(errorMap)) {
+                    if (rawText.includes(key)) {
+                        throw new Error(msg);
+                    }
                 }
+
+                // 2. Check for generic failure phrases (Case-insensitive)
+                const failurePhrases = [
+                    "cannot access",
+                    "unable to access",
+                    "text-based ai",
+                    "don't have access",
+                    "no transcript",
+                    "no subtitles",
+                    "caption unavailable"
+                ];
+
+                if (failurePhrases.some(phrase => rawText.toLowerCase().includes(phrase))) {
+                    throw new Error("Unable to process video: Transcript unavailable or access restricted.");
+                }
+
+                // 3. Strict Length Check (must be substantially descriptive)
+                if (!rawText || rawText.length < 100) {
+                    throw new Error("Transcript too short or unavailable. Please try a different video.");
+                }
+
+                console.log("🎥 Transcript validated successfully");
+
                 sourceType = 'video';
             } else {
                 sourceType = 'text';
