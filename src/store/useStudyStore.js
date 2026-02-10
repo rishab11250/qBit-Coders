@@ -15,7 +15,11 @@ const useStudyStore = create(
             topics: [],
             concepts: [],
             quiz: [],
+            quiz: [],
             weakAreas: [],
+
+            // Schedule State (Logic Domain)
+            studySchedule: null, // { days: [ { day: string, tasks: [] } ] }
 
             // Chat State (Logic Domain)
             chatHistory: [], // Array of { role: 'user' | 'ai', content: string }
@@ -66,6 +70,8 @@ const useStudyStore = create(
             })),
             setChatLoading: (isLoading) => set({ isChatLoading: isLoading }),
 
+            setSchedule: (schedule) => set({ studySchedule: schedule }),
+
             updateSettings: (newSettings) => set((state) => ({
                 settings: { ...state.settings, ...newSettings }
             })),
@@ -80,6 +86,7 @@ const useStudyStore = create(
                 concepts: [],
                 quiz: [],
                 chatHistory: [],
+                studySchedule: null,
                 currentStep: 'input',
                 error: null
             })
@@ -98,6 +105,7 @@ const useStudyStore = create(
                 concepts: state.concepts,
                 quiz: state.quiz,
                 weakAreas: state.weakAreas,
+                studySchedule: state.studySchedule, // Persist schedule
                 chatHistory: state.chatHistory, // Persist chat
                 settings: state.settings,
                 currentStep: state.currentStep

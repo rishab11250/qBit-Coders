@@ -1,6 +1,6 @@
 // GoogleGenerativeAI import removed as we use fetch
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
 
 /**
  * Helper: Encodes a File object to a Base64 string for the API.
@@ -187,5 +187,62 @@ export async function sendChatMessage(history, newMessage, context) {
   } catch (error) {
     console.error("Chat Error:", error);
     return "Sorry, I'm having trouble connecting to the tutor right now.";
+  }
+}
+
+/**
+ * Generates a structured study schedule based on material and time constraints.
+ * 
+ * @param {string} content - The study material (summary or full text)
+ * @param {string} days - Number of days until deadline
+ * @param {string} hoursPerDay - Hours available per day
+ */
+export async function generateSchedule(content, days, hoursPerDay) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const systemPrompt = `
+    You are an expert Study Planner.
+    Create a ${days}-day study schedule (assuming ${hoursPerDay} hours/day) for the provided material.
+    
+    Format the output as a valid JSON object:
+    {
+      "schedule": [
+        {
+          "day": 1,
+          "focus": "Topic Summary",
+          "tasks": [
+            { "time": "30 mins", "activity": "Read Section X" },
+            { "time": "15 mins", "activity": "Quiz" }
+          ]
+        }
+      ]
+    }
+  `;
+
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: systemPrompt },
+            { text: `Material to cover:\n${content.substring(0, 5000)}...` } // Send summary/intro to save tokens
+          ]
+        }]
+      }),
+    });
+
+    if (!response.ok) throw new Error("Schedule Gen Failed");
+
+    const data = await response.json();
+    let textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    textResponse = textResponse.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+
+    return JSON.parse(textResponse);
+  } catch (error) {
+    console.error("Schedule Error:", error);
+    return null;
   }
 }
