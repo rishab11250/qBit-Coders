@@ -5,6 +5,7 @@ import {
 import { motion } from 'framer-motion'; // Using Framer Motion for animations
 import useStudyStore from '../store/useStudyStore';
 import { processInput } from '../services/processingService'; // [NEW] Import Service
+import ModelSelector from './ui/ModelSelector'; // [NEW] Model Selector
 import Button from './ui/Button';
 import Loader from './ui/Loader';
 import ErrorMessage from './ui/ErrorMessage';
@@ -28,15 +29,6 @@ const InputHub = ({ onGenerate }) => {
         if (file) {
             setLocalFile(file);
             setPdfFile(file);
-            // We defer processing to the "Generate" button click to unify flow
-            // or we could peek at it here if needed, but user asked for "When user provides input"
-            // Let's keep file selection simple and process on Generate for consistency 
-            // OR per instructions "When user provides input (file or text): Replace existing raw text handling"
-            // The instructions say: "When user provides input... Replace existing raw text handling with: const result = await processInput(input)"
-            // I will implement this inside handleMainGenerate to ensure we capture the latest state (file or notes)
-            // But wait, the user instructions implies replacing the IMMEDIATE handling. 
-            // Actually, step 3 says "Send processedText to the existing AI generation function".
-            // So it's best to do it in handleMainGenerate.
         }
     };
 
@@ -56,18 +48,8 @@ const InputHub = ({ onGenerate }) => {
             } else if (activeTab === 'notes' && notes) {
                 result = await processInput(notes);
             } else if (activeTab === 'video' && videoUrl) {
-                // User said "Do NOT add YouTube or Gemini yet" in the previous step?
-                // But this current step says "One wire the processing step".
-                // And the previous step instructions for processingService.js said "ONLY support PDF, text".
-                // So for video, we might skip or just pass as text if supported.
-                // However, the existing code handles video specifically. 
-                // I will focus on PDF/Text as per strict instructions "ONLY support PDF files, plain text files, raw text strings".
-                // I will leave video logic as is or simple pass-through if needed, but the prompt implies focusing on the new service.
-                // Re-reading: "Do NOT add YouTube or Gemini yet" refers to the processingService file creation.
-                // Now in InputHub, I should use processInput. 
-                // I will add a check for video to use the OLD logic or just skip for now if not supported by processInput.
-                // actually processInput only supports PDF/Text. 
-                // So I will only apply this to PDF/Notes tabs.
+                // Video processing via processInput (which calls Gemini for transcript)
+                result = await processInput(videoUrl);
             }
 
             if (result) {
@@ -75,17 +57,15 @@ const InputHub = ({ onGenerate }) => {
 
                 // Update Store
                 setProcessedContent(result);
-                setExtractedText(result.rawText); // result.rawText from service
+                // Also set legacy extractedText for backward compatibility if needed, 
+                // but aiService now prefers processedContent.
+                setExtractedText(result.rawText);
 
                 console.log("🧠 Sending to AI...");
-                // 3. Send processedText to the existing AI generation function
-                // The onGenerate prop function likely reads from the store (extractedText), 
-                // so updating the store above should be sufficient.
-
                 await onGenerate();
-            } else if (activeTab === 'video') {
-                // Fallback for video if not handled by new service yet
-                await onGenerate();
+            } else {
+                // Should not happen if processInput works, but safety net
+                setError("No content could be processed.");
             }
 
         } catch (err) {
@@ -116,15 +96,26 @@ const InputHub = ({ onGenerate }) => {
 
                 {/* Hero Text */}
                 <div className="text-center mb-12">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.6 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-violet-500/30 text-violet-500 text-sm font-medium mb-6"
-                    >
-                        <Sparkles size={14} className="text-violet-500" />
-                        <span>Powered by Gemini 2.5 Flash lite</span>
-                    </motion.div>
+                    <div className="flex justify-center gap-4 mb-6">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.6 }}
+                            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-violet-500/30 text-violet-500 text-sm font-medium"
+                        >
+                            <Sparkles size={14} className="text-violet-500" />
+                            <span>Powered by Gemini AI</span>
+                        </motion.div>
+
+                        {/* [NEW] Model Selector */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                        >
+                            <ModelSelector />
+                        </motion.div>
+                    </div>
 
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}

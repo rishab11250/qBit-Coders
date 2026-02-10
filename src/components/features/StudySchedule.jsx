@@ -129,7 +129,7 @@ const StudySchedule = () => {
             )}
 
             {/* Schedule Display */}
-            {studySchedule ? (
+            {studySchedule && studySchedule.schedule ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {studySchedule.schedule.map((dayPlan, index) => (
                         <div

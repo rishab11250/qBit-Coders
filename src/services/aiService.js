@@ -6,11 +6,79 @@ const BASE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 /** Reads current settings from the Zustand store */
 const getSettings = () => useStudyStore.getState().settings;
 
+/**
+ * Models to try if the primary one is rate-limited.
+ * Order matters: prefer newer/faster, then older/stable.
+ */
+const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+
 /** Builds the API URL dynamically based on the selected model */
-const getApiUrl = () => {
-  const model = getSettings().model || 'gemini-2.5-flash-lite';
-  return `${BASE_API_URL}/${model}:generateContent`;
+const getApiUrl = (model = null) => {
+  const selectedModel = model || getSettings().model || 'gemini-2.5-flash-lite';
+  return `${BASE_API_URL}/${selectedModel}:generateContent`;
 };
+
+/**
+ * Executes a Gemini API request with automatic model fallback on 429 errors.
+ */
+async function executeGeminiRequest(payload) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("API Key Missing");
+
+  const preferredModel = getSettings().model || 'gemini-2.5-flash-lite';
+
+  // Create a list of models to try: [Preferred, ...Fallbacks]
+  // Filter out duplicates in case preferred is already in fallback list
+  const modelsToTry = [
+    preferredModel,
+    ...FALLBACK_MODELS.filter(m => m !== preferredModel)
+  ];
+
+  let lastError = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const url = `${getApiUrl(model)}?key=${apiKey}`;
+      // Use existing fetchWithRetry, but with fewer internal retries since we rotate models
+      const response = await fetchWithRetry(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }, 1, 1000); // Less aggressive internal retry, fail fast to switch model
+
+      if (!response.ok) {
+        // If it's a 429/503, throw specifically to trigger continue
+        if (response.status === 429 || response.status === 503) {
+          // [NEW] Update Store Status
+          const retryAfter = response.headers.get('Retry-After');
+          const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+          useStudyStore.getState().updateModelStatus(model, 'limited', waitTime);
+
+          throw new Error(`RateLimit_${response.status}`);
+        }
+        const errText = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errText}`);
+      }
+
+      // Success! Mark as available
+      useStudyStore.getState().updateModelStatus(model, 'available');
+      return response; // Success!
+
+    } catch (error) {
+      lastError = error;
+      const isRateLimit = error.message.includes('RateLimit') || error.message.includes('429') || error.message.includes('503');
+
+      if (isRateLimit) {
+        console.warn(`Model ${model} rate limited/busy. Switching to fallback...`);
+        continue; // Try next model
+      } else {
+        throw error; // Other errors (400, auth) should fail immediately
+      }
+    }
+  }
+
+  throw lastError || new Error("All models exhausted.");
+}
 
 /**
  * Helper: Retries a fetch operation with exponential backoff.
@@ -19,18 +87,35 @@ const getApiUrl = () => {
  * @param {number} retries 
  * @param {number} backoff 
  */
-async function fetchWithRetry(url, options, retries = 2, backoff = 1000) {
+async function fetchWithRetry(url, options, retries = 3, backoff = 1000) {
   try {
     const response = await fetch(url, options);
-    // 429 = Too Many Requests, 5xx = Server Errors
-    if (!response.ok && (response.status === 429 || response.status >= 500)) {
+
+    // 429 (Too Many Requests) or 503 (Service Unavailable)
+    if (!response.ok && (response.status === 429 || response.status === 503)) {
       if (retries > 0) {
-        console.warn(`API call failed (${response.status}). Retrying in ${backoff}ms...`);
+        // Check for Retry-After header (seconds)
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : backoff;
+
+        console.warn(`API Rate Limit/Error (${response.status}). Retrying in ${delay / 1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        // Recursive retry with increased backoff (cap at 60s)
+        const nextBackoff = Math.min(backoff * 2, 60000);
+        return fetchWithRetry(url, options, retries - 1, nextBackoff);
+      }
+    }
+
+    // Check for other server errors (500, 502, 504)
+    if (!response.ok && response.status >= 500) {
+      if (retries > 0) {
+        console.warn(`Server Error (${response.status}). Retrying in ${backoff}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoff));
-        // Recursive retry with increased backoff
         return fetchWithRetry(url, options, retries - 1, backoff * 2);
       }
     }
+
     return response;
   } catch (error) {
     if (retries > 0) {
@@ -141,17 +226,13 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
   }
 
   try {
-    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: parts }]
-      }),
+    const response = await executeGeminiRequest({
+      contents: [{ parts: parts }]
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`API Error: ${response.status} - ${errText}`);
+      // Should be handled by executeGeminiRequest but safety net
+      throw new Error(`API Error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -193,8 +274,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
  * @returns {Promise<string>} Raw text response
  */
 export async function callGemini(systemPrompt, userPrompt, fileData = null) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error("API Key Missing");
+  // executeGeminiRequest handles API Key check internally
 
   const parts = [{ text: systemPrompt }];
 
@@ -210,18 +290,9 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
   parts.push({ text: userPrompt });
 
   try {
-    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: parts }]
-      }),
+    const response = await executeGeminiRequest({
+      contents: [{ parts: parts }]
     });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
-    }
 
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
@@ -240,8 +311,7 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
  * @param {Object} context - { pdfBase64, extractedText, notes } to provide context
  */
 export async function sendChatMessage(history, newMessage, context) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) return null;
+  // executeGeminiRequest handles API Key check internally
 
   // 1. Build the system instruction / context
   let contextPrompt = "You are a helpful study tutor. Answer questions based on the provided study material.";
@@ -252,7 +322,7 @@ export async function sendChatMessage(history, newMessage, context) {
   if (context.processedContent && context.processedContent.text) {
     const { text, metadata } = context.processedContent;
     const title = metadata?.title ? `Title: ${metadata.title}\n` : '';
-    // We limit context to ~30k chars to stay safe within Flash Lite limits (which is huge, but good practice)
+    // We limit context to ~30k chars to stay safe within Flash Lite limits
     contextPrompt += `\n\nStudy Material Context:\n${title}${text.substring(0, 40000)}...`;
   }
   // Fallback to legacy fields
@@ -263,16 +333,10 @@ export async function sendChatMessage(history, newMessage, context) {
   }
 
   // 2. Format history for Gemini API (user/model roles)
-  // The store uses 'ai', Gemini uses 'model'. We map it here.
   const formattedHistory = history.map(msg => ({
     role: msg.role === 'ai' ? 'model' : 'user',
     parts: [{ text: msg.content }]
   }));
-
-  // 3. Add the initial context as a system instruction (or just the first user message for Flash model)
-  // Gemini 1.5 Flash supports system instructions, but for simplicity/robustness with older keys,
-  // we can prepend it to the first message or send it as a separate block.
-  // For chat, it's best to start a session.
 
   try {
     const payload = {
@@ -282,22 +346,7 @@ export async function sendChatMessage(history, newMessage, context) {
       ]
     };
 
-    // If there is a PDF, we might need to send it again if it's not "cached" in the chat session.
-    // But Gemini 1.5 is stateless via REST unless using the specialized ChatSession object.
-    // To keep it simple for this "Logic Domain" task:
-    // We attach the PDF data to the LATEST message if it's the FIRST message, or relies on text context.
-    // Optimization: For now, we rely on the text context extracted earlier. 
-    // If we want full PDF chat, we'd need to re-send the inlineData every time or use the File API.
-    // Let's stick to text context for the "Logic MVP" as requested.
-
-    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) throw new Error(`Chat Loop Failed: ${response.status}`);
-
+    const response = await executeGeminiRequest(payload);
     const data = await response.json();
     const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate an answer.";
 
@@ -317,8 +366,7 @@ export async function sendChatMessage(history, newMessage, context) {
  * @param {string} hoursPerDay - Hours available per day
  */
 export async function generateSchedule(content, days, hoursPerDay) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) return null;
+  // executeGeminiRequest handles API Key check internally
 
   const systemPrompt = `
     You are an expert Study Planner.
@@ -340,20 +388,14 @@ export async function generateSchedule(content, days, hoursPerDay) {
   `;
 
   try {
-    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: systemPrompt },
-            { text: `Material to cover:\n${content.substring(0, 5000)}...` } // Send summary/intro to save tokens
-          ]
-        }]
-      }),
+    const response = await executeGeminiRequest({
+      contents: [{
+        parts: [
+          { text: systemPrompt },
+          { text: `Material to cover:\n${content.substring(0, 5000)}...` } // Send summary/intro to save tokens
+        ]
+      }]
     });
-
-    if (!response.ok) throw new Error("Schedule Gen Failed");
 
     const data = await response.json();
     let textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;

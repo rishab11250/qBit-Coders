@@ -40,10 +40,15 @@ const useStudyStore = create(
             // Settings State
             settings: {
                 model: 'gemini-2.5-flash-lite',
-                difficulty: 'Intermediate',
+                difficulty: 'Medium',
                 quizCount: 5,
-                theme: 'dark' // Default theme
+                theme: 'dark', // Default theme
+                // apiKey removed
             },
+
+            // [NEW] Track Model Availability 
+            // Structure: { 'gemini-2.5-flash': { status: 'available' | 'limited', availableAt: timestamp } }
+            modelStatus: {},
 
             // Actions
             toggleTheme: () => set((state) => ({

@@ -1,5 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker?url";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { callGemini } from './aiService'; // [NEW] Import for YouTube processing
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;

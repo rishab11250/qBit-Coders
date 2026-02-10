@@ -21,24 +21,33 @@ const App = () => {
     try {
       let result;
 
-      // 1. PDF File (Multimodal)
-      if (pdfFile) {
+      // [NEW] Prioritize Processed Content (Structured)
+      const { processedContent } = useStudyStore.getState();
+
+      if (processedContent && processedContent.text) {
+        console.log("Generating from Processed Content...");
+        // We pass the full processed text to the generator
+        result = await generateStudyContent('text', processedContent.text);
+      }
+      // Fallback: PDF File (Legacy)
+      else if (pdfFile) {
         console.log("Generating from PDF File...");
         const base64 = await fileToBase64(pdfFile);
         result = await generateStudyContent('pdf', base64, pdfFile.type);
       }
-      // 2. Extracted Text
+      // Fallback: Extracted Text
       else if (extractedText && extractedText.length > 0) {
         console.log("Generating from Extracted Text...");
         result = await generateStudyContent('text', extractedText);
       }
-      // 3. Raw Notes
+      // Fallback: Raw Notes
       else if (notes && notes.length > 0) {
         console.log("Generating from Notes...");
         result = await generateStudyContent('text', notes);
       }
-      // 4. Video URL
+      // Fallback: Video URL
       else if (videoUrl) {
+        // ... existing video logic ...
         console.log("Generating from Video URL...");
         const prompt = `Analyze the educational content of this video: ${videoUrl}. Generate a study plan, summary, and quiz.`;
         result = await generateStudyContent('text', prompt);
