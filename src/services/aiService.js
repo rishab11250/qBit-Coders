@@ -197,7 +197,9 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
   // Define the JSON structure. 
   // IMPORTANT: We include 'concepts' to support existing DashboardLayout UI.
-  const { difficulty, quizCount } = getSettings();
+  // Force 20 questions for all generations to allow client-side filtering
+  const { difficulty } = getSettings();
+  const quizCount = 20;
 
   const systemPrompt = `
     You are an expert AI Study Coach and Curriculum Designer.
@@ -328,7 +330,9 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
  * @returns {Promise<Object|null>} Structured study data
  */
 export async function generateStudyContentWithSearch(videoUrl) {
-  const { difficulty, quizCount } = getSettings();
+  // Force 20 questions for all generations to allow client-side filtering
+  const { difficulty } = getSettings();
+  const quizCount = 20;
 
   const systemPrompt = `
     You are an expert AI Study Coach and Curriculum Designer.
@@ -566,11 +570,16 @@ export async function generateSchedule(content, days, hoursPerDay) {
   `;
 
   try {
+    // Safe content handling: if object, stringify; else use as string
+    const safeContent = typeof content === 'object' && content !== null
+      ? JSON.stringify(content)
+      : String(content || '');
+
     const response = await executeGeminiRequest({
       contents: [{
         parts: [
           { text: systemPrompt },
-          { text: `Material to cover:\n${content.substring(0, 5000)}...` } // Send summary/intro to save tokens
+          { text: `Material to cover:\n${safeContent.substring(0, 5000)}...` } // Send summary/intro to save tokens
         ]
       }]
     });
