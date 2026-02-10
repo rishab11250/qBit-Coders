@@ -48,11 +48,21 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
         return Array.from(unique);
     }, [weakAreas, historicalWeakTopics]);
 
+    // Intersect global weak topics with CURRENT quiz topics
+    const relevantWeakTopics = useMemo(() => {
+        if (!quizData || quizData.length === 0) return [];
+        const currentTopics = new Set(quizData.map(q => q.topic?.toLowerCase()).filter(Boolean));
+        return allWeakTopics.filter(wt =>
+            currentTopics.has(wt.toLowerCase()) ||
+            quizData.some(q => q.topic?.toLowerCase().includes(wt.toLowerCase()))
+        );
+    }, [allWeakTopics, quizData]);
+
     // Filter questions based on mode
     const activeQuizData = useMemo(() => {
-        if (filterMode === 'weak' && allWeakTopics.length > 0) {
+        if (filterMode === 'weak' && relevantWeakTopics.length > 0) {
             const filtered = quizData.filter(q =>
-                q.topic && allWeakTopics.some(wt =>
+                q.topic && relevantWeakTopics.some(wt =>
                     wt.toLowerCase().includes(q.topic.toLowerCase()) ||
                     q.topic.toLowerCase().includes(wt.toLowerCase())
                 )
@@ -60,7 +70,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
             return filtered.length > 0 ? filtered : quizData;
         }
         return quizData;
-    }, [quizData, filterMode, allWeakTopics]);
+    }, [quizData, filterMode, relevantWeakTopics]);
 
     // Slice based on selected count
     const finalQuizData = useMemo(() => {
@@ -270,27 +280,27 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 Start Quiz <ArrowRight size={18} className="inline ml-2" />
                             </button>
 
-                            {allWeakTopics.length > 0 && (
+                            {relevantWeakTopics.length > 0 && (
                                 <button
                                     onClick={() => startQuiz('weak')}
                                     className="px-6 py-3 rounded-xl bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 flex items-center gap-2"
                                 >
-                                    <Filter size={16} /> Weak Areas ({allWeakTopics.length})
+                                    <Filter size={16} /> Weak Areas ({relevantWeakTopics.length})
                                 </button>
                             )}
                         </div>
 
-                        {allWeakTopics.length > 0 && (
+                        {relevantWeakTopics.length > 0 && (
                             <div className="mt-6 max-w-md mx-auto">
                                 <p className="text-xs text-secondary/60 mb-2">Focus Logic: Questions matching your weak topics</p>
                                 <div className="flex flex-wrap justify-center gap-1.5">
-                                    {allWeakTopics.slice(0, 5).map((t, i) => (
+                                    {relevantWeakTopics.slice(0, 5).map((t, i) => (
                                         <span key={i} className="px-2 py-0.5 text-[10px] font-medium bg-rose-500/10 text-rose-400/80 rounded border border-rose-500/10">
                                             {t}
                                         </span>
                                     ))}
-                                    {allWeakTopics.length > 5 && (
-                                        <span className="px-2 py-0.5 text-[10px] text-secondary/50">+{allWeakTopics.length - 5} more</span>
+                                    {relevantWeakTopics.length > 5 && (
+                                        <span className="px-2 py-0.5 text-[10px] text-secondary/50">+{relevantWeakTopics.length - 5} more</span>
                                     )}
                                 </div>
                             </div>
