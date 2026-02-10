@@ -14,6 +14,7 @@ const ChatPanel = ({ isOpen, onClose }) => {
         setChatLoading,
         extractedText,
         notes,
+        processedContent,
         settings
     } = useStudyStore();
 
@@ -54,7 +55,9 @@ const ChatPanel = ({ isOpen, onClose }) => {
         try {
             // 2. Call AI Service
             // Context: prefer extracted text, fallback to notes
-            const context = { extractedText, notes };
+            // 2. Call AI Service
+            // Context: prefer processedContent (images/pdf), fallback to extractedText/notes
+            const context = { extractedText, notes, processedContent };
 
             // Note: sendChatMessage expects (history, newMessage, context)
             const reply = await sendChatMessage(chatHistory, userMessage, context);

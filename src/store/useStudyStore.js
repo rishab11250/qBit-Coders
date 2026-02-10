@@ -29,6 +29,19 @@ const useStudyStore = create(
             quiz: [],
             weakAreas: [],
 
+            // Quiz History (persisted)
+            quizHistory: [], // { date, score, total, weakTopics: [], topicScores: {} }
+
+            // Study Stats (persisted)
+            studyStats: {
+                totalPlansGenerated: 0,
+                studyStreak: 0,
+                lastStudyDate: null
+            },
+
+            // Pomodoro State (not persisted)
+            pomodoroTopic: null,
+
             // Schedule State (Logic Domain)
             studySchedule: null, // { days: [ { day: string, tasks: [] } ] }
 
@@ -93,6 +106,38 @@ const useStudyStore = create(
             setChatLoading: (isLoading) => set({ isChatLoading: isLoading }),
 
             setSchedule: (schedule) => set({ studySchedule: schedule }),
+            setQuiz: (quiz) => set({ quiz }), // [NEW] Allow updating quiz specifically
+
+            // Quiz History Actions
+            addQuizResult: (result) => set((state) => ({
+                quizHistory: [...state.quizHistory, { ...result, date: new Date().toISOString() }]
+            })),
+
+            // Study Stats Actions
+            incrementPlansGenerated: () => set((state) => {
+                const today = new Date().toDateString();
+                const lastDate = state.studyStats.lastStudyDate;
+                const yesterday = new Date(Date.now() - 86400000).toDateString();
+                let streak = state.studyStats.studyStreak;
+                if (lastDate === today) {
+                    // Same day, no change
+                } else if (lastDate === yesterday) {
+                    streak += 1;
+                } else {
+                    streak = 1;
+                }
+                return {
+                    studyStats: {
+                        ...state.studyStats,
+                        totalPlansGenerated: state.studyStats.totalPlansGenerated + 1,
+                        studyStreak: streak,
+                        lastStudyDate: today
+                    }
+                };
+            }),
+
+            // Pomodoro Actions
+            setPomodoroTopic: (topic) => set({ pomodoroTopic: topic }),
 
             updateSettings: (newSettings) => set((state) => {
                 // Validate model if being updated
@@ -155,19 +200,19 @@ const useStudyStore = create(
                 concepts: state.concepts,
                 quiz: state.quiz,
                 weakAreas: state.weakAreas,
+                quizHistory: state.quizHistory,
+                studyStats: state.studyStats,
                 studySchedule: state.studySchedule, // Persist schedule
                 chatHistory: state.chatHistory, // Persist chat
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
-            version: 4, // [NEW] Bump version to force migration
+            version: 5, // Bump version for quizHistory + studyStats
             migrate: (persistedState, version) => {
                 if (version < 4) {
-                    // Validate and fix model if invalid
                     const currentModel = persistedState?.settings?.model;
                     const validModel = VALID_MODELS.includes(currentModel) ? currentModel : DEFAULT_MODEL;
-
-                    return {
+                    persistedState = {
                         ...persistedState,
                         settings: {
                             ...persistedState?.settings,
@@ -175,6 +220,17 @@ const useStudyStore = create(
                             difficulty: persistedState?.settings?.difficulty || 'Intermediate',
                             quizCount: persistedState?.settings?.quizCount || 5,
                             theme: persistedState?.settings?.theme || 'dark'
+                        }
+                    };
+                }
+                if (version < 5) {
+                    persistedState = {
+                        ...persistedState,
+                        quizHistory: persistedState?.quizHistory || [],
+                        studyStats: persistedState?.studyStats || {
+                            totalPlansGenerated: 0,
+                            studyStreak: 0,
+                            lastStudyDate: null
                         }
                     };
                 }

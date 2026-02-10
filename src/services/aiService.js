@@ -205,7 +205,8 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
     **Configuration:**
     - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
-    - Quiz Question Count: ${quizCount}
+    - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
+    - Quiz Question Count: 20 (Generate a comprehensive set covering all topics)
 
     **Required Output Format (JSON ONLY):**
     {
@@ -258,6 +259,17 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
   if (inputType === 'text') {
     parts.push({ text: `Analyze this study material:\n\n${content}` });
+  } else if (inputType === 'images' && Array.isArray(content)) {
+    // Multi-image support: each item is { mimeType, data }
+    content.forEach((img, i) => {
+      parts.push({
+        inlineData: {
+          mimeType: img.mimeType,
+          data: img.data
+        }
+      });
+    });
+    parts.push({ text: `Analyze these ${content.length} lecture slides/images and create a comprehensive study plan.` });
   } else if (inputType === 'pdf' || inputType === 'image') {
     parts.push({
       inlineData: {
@@ -488,10 +500,29 @@ export async function sendChatMessage(history, newMessage, context) {
   try {
     const payload = {
       contents: [
-        ...formattedHistory,
-        { role: 'user', parts: [{ text: `${contextPrompt}\n\nStudent Question: ${newMessage}` }] }
+        ...formattedHistory
       ]
     };
+
+    // Construct the user message part with context overlap
+    const userMessageParts = [];
+
+    // [NEW] If we have image data in context, include it!
+    if (context.processedContent && context.processedContent.imageData) {
+      context.processedContent.imageData.forEach(img => {
+        userMessageParts.push({
+          inlineData: {
+            mimeType: img.mimeType,
+            data: img.data
+          }
+        });
+      });
+      contextPrompt += "\n\n[Context: The user has uploaded images/slides. Refer to them.]";
+    }
+
+    userMessageParts.push({ text: `${contextPrompt}\n\nStudent Question: ${newMessage}` });
+
+    payload.contents.push({ role: 'user', parts: userMessageParts });
 
     const response = await executeGeminiRequest(payload);
     const data = await response.json();

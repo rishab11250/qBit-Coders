@@ -1,316 +1,485 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { CheckCircle, XCircle, Eye, Clock, Trophy, ArrowRight, RotateCcw, Zap, Target, Filter, ChevronDown, RefreshCw } from 'lucide-react';
+import { generateStudyContent } from '../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    CheckCircle2, XCircle, Eye, ChevronRight, ChevronLeft,
-    Trophy, Target, RotateCcw, Sparkles, Brain
-} from 'lucide-react';
+import useStudyStore from '../store/useStudyStore';
+
+const TIMER_DURATION = 30;
 
 const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
+    const { addQuizResult, weakAreas, quizHistory, processedContent, setQuiz } = useStudyStore();
+
+    // Mode: 'start' | 'active' | 'results'
+    const [mode, setMode] = useState('start');
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [revealedAnswers, setRevealedAnswers] = useState({});
-    const [grades, setGrades] = useState({});
-    const [showResults, setShowResults] = useState(false);
+    const [score, setScore] = useState(0);
+    const [answers, setAnswers] = useState({});
+    const [showAnswer, setShowAnswer] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
+    const [isTimerActive, setIsTimerActive] = useState(false);
+    const [filterMode, setFilterMode] = useState('all'); // 'all' | 'weak'
+    const [selectedCount, setSelectedCount] = useState(5); // Default to 5 questions
+    const [isGenerating, setIsGenerating] = useState(false);
+    const timerRef = useRef(null);
+    const answeredRef = useRef({});
 
-    const totalQuestions = quizData.length;
-    const answeredCount = Object.keys(grades).length;
-    const correctCount = Object.values(grades).filter(g => g === 'correct').length;
-    const incorrectCount = answeredCount - correctCount;
-    const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+    // Derive weak topics from quiz history
+    const historicalWeakTopics = useMemo(() => {
+        const topicMap = {};
+        quizHistory.forEach(q => {
+            if (q.topicScores) {
+                Object.entries(q.topicScores).forEach(([topic, data]) => {
+                    if (!topicMap[topic]) topicMap[topic] = { correct: 0, total: 0 };
+                    topicMap[topic].correct += data.correct;
+                    topicMap[topic].total += data.total;
+                });
+            }
+        });
+        // Topics with < 70% accuracy
+        return Object.entries(topicMap)
+            .filter(([_, d]) => d.total > 0 && (d.correct / d.total) < 0.7)
+            .map(([topic]) => topic);
+    }, [quizHistory]);
 
-    const toggleReveal = useCallback((index) => {
-        setRevealedAnswers(prev => ({ ...prev, [index]: !prev[index] }));
-    }, []);
+    // Combine store weakAreas + historical weak topics
+    const allWeakTopics = useMemo(() => {
+        const unique = new Set([...(weakAreas || []), ...historicalWeakTopics]);
+        return Array.from(unique);
+    }, [weakAreas, historicalWeakTopics]);
 
-    const handleGrade = useCallback((index, isCorrect, topic) => {
-        setGrades(prev => ({ ...prev, [index]: isCorrect ? 'correct' : 'incorrect' }));
-        if (!isCorrect && topic) onWeakTopicDetected(topic);
-    }, [onWeakTopicDetected]);
+    // Filter questions based on mode
+    const activeQuizData = useMemo(() => {
+        if (filterMode === 'weak' && allWeakTopics.length > 0) {
+            // Loose matching: checks if question topic contains any weak topic or vice versa
+            const filtered = quizData.filter(q =>
+                q.topic && allWeakTopics.some(wt =>
+                    wt.toLowerCase().includes(q.topic.toLowerCase()) ||
+                    q.topic.toLowerCase().includes(wt.toLowerCase())
+                )
+            );
+            // If filtering results in 0 questions, fall back to all questions (safety net)
+            return filtered.length > 0 ? filtered : quizData;
+        }
+        return quizData;
+    }, [quizData, filterMode, allWeakTopics]);
 
-    const goNext = () => {
-        if (currentIndex < totalQuestions - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            setShowResults(true);
+    // Slice based on selected count
+    const finalQuizData = useMemo(() => {
+        return activeQuizData.slice(0, selectedCount);
+    }, [activeQuizData, selectedCount]);
+
+    const total = finalQuizData.length;
+    const currentQ = finalQuizData[currentIndex];
+
+    // Timer Logic using setInterval for better reliability
+    useEffect(() => {
+        if (isTimerActive && timeLeft > 0) {
+            timerRef.current = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timerRef.current);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else if (timeLeft === 0 && isTimerActive) {
+            // Time ran out
+            setIsTimerActive(false);
+            if (!answeredRef.current[currentIndex]) {
+                handleTimeout();
+            }
+        }
+
+        return () => clearInterval(timerRef.current);
+    }, [isTimerActive, timeLeft, currentIndex]); // Dependencies need to trigger effect updates
+
+    const handleTimeout = () => {
+        setShowAnswer(true);
+        if (!answeredRef.current[currentIndex]) {
+            answeredRef.current[currentIndex] = true;
+            setAnswers(prev => ({
+                ...prev,
+                [currentIndex]: { isCorrect: false, topic: currentQ?.topic }
+            }));
+            if (currentQ?.topic) onWeakTopicDetected?.(currentQ.topic);
         }
     };
 
-    const goPrev = () => {
-        if (showResults) { setShowResults(false); return; }
-        if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
-    };
-
-    const resetQuiz = () => {
+    const startQuiz = (selectedMode = 'all') => {
+        setFilterMode(selectedMode);
+        setMode('active');
         setCurrentIndex(0);
-        setRevealedAnswers({});
-        setGrades({});
-        setShowResults(false);
+        setScore(0);
+        setAnswers({});
+        answeredRef.current = {};
+        setShowAnswer(false);
+        setTimeLeft(TIMER_DURATION);
+        setIsTimerActive(true);
+        setIsTimerActive(true);
     };
 
-    if (!quizData || totalQuestions === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-16 text-secondary">
-                <Brain size={48} className="mb-4 opacity-30" />
-                <p className="italic text-lg">No quiz questions available.</p>
-            </div>
-        );
+    const handleRegenerate = async () => {
+        if (!processedContent?.text) return;
+
+        try {
+            setIsGenerating(true);
+            // Re-generate content using the stored text. 
+            // Since we updated aiService to default to 20 questions, this will fetch a larger set.
+            const result = await generateStudyContent('text', processedContent.text);
+
+            if (result && result.quiz && result.quiz.length > 0) {
+                setQuiz(result.quiz);
+                setSelectedCount(Math.min(20, result.quiz.length)); // Auto-select max
+            }
+        } catch (error) {
+            console.error("Failed to regenerate quiz:", error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleReveal = () => {
+        setIsTimerActive(false); // Stop timer immediately
+        setShowAnswer(true);
+    };
+
+    const handleGrade = useCallback((isCorrect) => {
+        if (answeredRef.current[currentIndex]) return;
+        answeredRef.current[currentIndex] = true;
+
+        setIsTimerActive(false); // Ensure timer stops
+        setAnswers(prev => ({
+            ...prev,
+            [currentIndex]: { isCorrect, topic: currentQ?.topic }
+        }));
+
+        if (isCorrect) {
+            setScore(s => s + 1);
+        } else if (currentQ?.topic) {
+            onWeakTopicDetected?.(currentQ.topic);
+        }
+    }, [currentIndex, currentQ, onWeakTopicDetected]);
+
+    const nextQuestion = () => {
+        if (currentIndex + 1 >= total) {
+            finishQuiz();
+        } else {
+            const nextIdx = currentIndex + 1;
+            setCurrentIndex(nextIdx);
+            setShowAnswer(false);
+            setTimeLeft(TIMER_DURATION);
+            setIsTimerActive(true); // Restart timer for next question
+        }
+    };
+
+    const finishQuiz = () => {
+        setMode('results');
+        setIsTimerActive(false);
+
+        const finalAnswers = { ...answers };
+        const weakTopics = [...new Set(
+            Object.values(finalAnswers)
+                .filter(a => !a.isCorrect && a.topic)
+                .map(a => a.topic)
+        )];
+
+        const topicScores = {};
+        Object.values(finalAnswers).forEach(a => {
+            if (a.topic) {
+                if (!topicScores[a.topic]) topicScores[a.topic] = { correct: 0, total: 0 };
+                topicScores[a.topic].total++;
+                if (a.isCorrect) topicScores[a.topic].correct++;
+            }
+        });
+
+        const finalScore = Object.values(finalAnswers).filter(a => a.isCorrect).length;
+
+        addQuizResult({
+            score: finalScore,
+            total,
+            weakTopics,
+            topicScores
+        });
+    };
+
+    if (!quizData || quizData.length === 0) {
+        return <p className="text-secondary italic text-center py-8">No quiz questions available.</p>;
     }
 
-    const item = quizData[currentIndex];
-    const isRevealed = revealedAnswers[currentIndex];
-    const grade = grades[currentIndex];
-    const scorePercent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
-
-    const cardVariants = {
-        enter: (direction) => ({ x: direction > 0 ? 300 : -300, opacity: 0, scale: 0.9 }),
-        center: { x: 0, opacity: 1, scale: 1 },
-        exit: (direction) => ({ x: direction > 0 ? -300 : 300, opacity: 0, scale: 0.9 })
-    };
+    // Timer ring visual
+    const circumference = 2 * Math.PI * 18;
+    const progress = timeLeft / TIMER_DURATION;
+    const strokeDashoffset = circumference - (progress * circumference);
+    const timerColor = timeLeft <= 5 ? '#f43f5e' : timeLeft <= 10 ? '#f59e0b' : '#14b8a6';
 
     return (
         <div className="p-6 md:p-8">
-            {/* ── Header: Progress + Score ── */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-violet-500/10">
-                        <Target size={20} className="text-violet-500" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-secondary font-medium uppercase tracking-wider">Progress</p>
-                        <p className="text-sm font-bold text-primary">
-                            {answeredCount} / {totalQuestions} answered
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    {answeredCount > 0 && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-emerald-500 font-bold">{correctCount}✓</span>
-                            <span className="text-secondary">·</span>
-                            <span className="text-red-400 font-bold">{incorrectCount}✗</span>
+            <AnimatePresence mode="wait">
+                {/* START SCREEN */}
+                {mode === 'start' && (
+                    <motion.div
+                        key="start"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-center py-12 relative"
+                    >
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                            <Zap size={36} className="text-violet-500" />
                         </div>
-                    )}
-                    <button onClick={resetQuiz} className="p-2 rounded-lg hover:bg-primary/10 text-secondary hover:text-primary transition-colors cursor-pointer" title="Reset Quiz">
-                        <RotateCcw size={16} />
-                    </button>
-                </div>
-            </div>
+                        <h3 className="text-2xl font-bold text-primary mb-2">Ready to Test Yourself?</h3>
+                        <p className="text-secondary mb-6">{quizData.length} questions available • {TIMER_DURATION}s per question</p>
 
-            {/* ── Progress Bar ── */}
-            <div className="w-full h-1.5 bg-primary/10 rounded-full mb-8 overflow-hidden">
-                <motion.div
-                    className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-            </div>
-
-            {/* ── Card Area ── */}
-            <div className="relative min-h-[320px]">
-                <AnimatePresence mode="wait" custom={1}>
-                    {showResults ? (
-                        /* ── Results Summary ── */
-                        <motion.div
-                            key="results"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -30 }}
-                            transition={{ duration: 0.4 }}
-                            className="text-center py-8"
-                        >
-                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 to-indigo-500/20 mb-6">
-                                <Trophy size={40} className={scorePercent >= 70 ? 'text-amber-400' : 'text-secondary'} />
-                            </div>
-
-                            <h3 className="text-3xl font-bold text-primary mb-2">Quiz Complete!</h3>
-                            <p className="text-secondary mb-8">Here's how you did:</p>
-
-                            {/* Score Ring */}
-                            <div className="relative inline-flex items-center justify-center mb-8">
-                                <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-                                    <circle cx="60" cy="60" r="52" stroke="currentColor" className="text-primary/10" strokeWidth="8" fill="none" />
-                                    <motion.circle
-                                        cx="60" cy="60" r="52"
-                                        stroke="url(#scoreGradient)"
-                                        strokeWidth="8"
-                                        fill="none"
-                                        strokeLinecap="round"
-                                        strokeDasharray={2 * Math.PI * 52}
-                                        initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
-                                        animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - scorePercent / 100) }}
-                                        transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
-                                    />
-                                    <defs>
-                                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="#8B5CF6" />
-                                            <stop offset="100%" stopColor="#6366F1" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-3xl font-black text-primary">{scorePercent}%</span>
-                                    <span className="text-xs text-secondary">Score</span>
+                        {/* Question Count Selector */}
+                        <div className="flex items-center justify-center gap-3 mb-8">
+                            <span className="text-sm text-secondary font-medium">Questions:</span>
+                            <div className="relative">
+                                <select
+                                    value={selectedCount}
+                                    onChange={(e) => setSelectedCount(Number(e.target.value))}
+                                    className="appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-bold py-2 pl-4 pr-8 rounded-lg border border-primary/20 focus:outline-none focus:border-violet-500 cursor-pointer transition-colors"
+                                >
+                                    {[5, 10, 15, 20].filter(n => n <= quizData.length).map(n => (
+                                        <option key={n} value={n} className="bg-gray-900 text-white">{n}</option>
+                                    ))}
+                                    {/* Ensure at least one option if length < 5 (e.g. 3 questions available) */}
+                                    {quizData.length < 5 && <option value={quizData.length}>{quizData.length}</option>}
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
+                                    <ChevronDown size={14} />
                                 </div>
                             </div>
-
-                            {/* Stats Row */}
-                            <div className="flex justify-center gap-6 mb-8">
-                                <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-xl bg-emerald-500/10">
-                                    <CheckCircle2 size={20} className="text-emerald-500" />
-                                    <span className="text-2xl font-bold text-emerald-500">{correctCount}</span>
-                                    <span className="text-xs text-secondary">Correct</span>
-                                </div>
-                                <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-xl bg-red-500/10">
-                                    <XCircle size={20} className="text-red-400" />
-                                    <span className="text-2xl font-bold text-red-400">{incorrectCount}</span>
-                                    <span className="text-xs text-secondary">Incorrect</span>
-                                </div>
-                            </div>
-
+                        </div>
+                        {quizData.length < 20 && processedContent?.text && (
                             <button
-                                onClick={resetQuiz}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-500/25 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                                onClick={handleRegenerate}
+                                disabled={isGenerating}
+                                className="group flex items-center justify-center gap-2 mx-auto text-xs font-medium text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 rounded-full border border-violet-500/20 transition-all -mt-6 mb-8 disabled:opacity-50"
                             >
-                                <RotateCcw size={16} /> Retake Quiz
+                                <RefreshCw size={12} className={`transition-transform duration-700 ${isGenerating ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                                {isGenerating ? 'Generating Questions...' : `Generate Full 20-Question Set`}
                             </button>
-                        </motion.div>
-                    ) : (
-                        /* ── Question Card ── */
-                        <motion.div
-                            key={currentIndex}
-                            custom={1}
-                            variants={cardVariants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{ duration: 0.35, ease: "easeInOut" }}
-                        >
-                            {/* Question Number + Topic */}
-                            <div className="flex items-center justify-between mb-5">
-                                <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white text-sm font-bold">
-                                        {currentIndex + 1}
-                                    </span>
-                                    <span className="text-xs text-secondary font-medium">of {totalQuestions}</span>
+                        )}
+
+                        <p className="text-secondary/60 text-sm mb-8">Answer before the timer runs out!</p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <button
+                                onClick={() => startQuiz('all')}
+                                className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-lg shadow-lg hover:shadow-violet-500/30 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 border border-white/10"
+                            >
+                                Start Quiz <ArrowRight size={18} className="inline ml-2" />
+                            </button>
+
+                            {allWeakTopics.length > 0 && (
+                                <button
+                                    onClick={() => startQuiz('weak')}
+                                    className="px-6 py-3 rounded-xl bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 flex items-center gap-2"
+                                >
+                                    <Filter size={16} /> Weak Areas ({allWeakTopics.length})
+                                </button>
+                            )}
+                        </div>
+
+                        {allWeakTopics.length > 0 && (
+                            <div className="mt-6 max-w-md mx-auto">
+                                <p className="text-xs text-secondary/60 mb-2">Focus Logic: Questions matching your weak topics</p>
+                                <div className="flex flex-wrap justify-center gap-1.5">
+                                    {allWeakTopics.slice(0, 5).map((t, i) => (
+                                        <span key={i} className="px-2 py-0.5 text-[10px] font-medium bg-rose-500/10 text-rose-400/80 rounded border border-rose-500/10">
+                                            {t}
+                                        </span>
+                                    ))}
+                                    {allWeakTopics.length > 5 && (
+                                        <span className="px-2 py-0.5 text-[10px] text-secondary/50">+{allWeakTopics.length - 5} more</span>
+                                    )}
                                 </div>
-                                {item.topic && (
-                                    <span className="text-xs font-semibold text-violet-500 bg-violet-500/10 px-3 py-1 rounded-full uppercase tracking-wider">
-                                        {item.topic}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* ACTIVE QUIZ */}
+                {mode === 'active' && currentQ && (
+                    <motion.div
+                        key={`q-${currentIndex}`}
+                        initial={{ opacity: 0, x: 40 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -40 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                    >
+                        {/* Filter badge */}
+                        {filterMode === 'weak' && (
+                            <div className="mb-4 flex items-center gap-2 text-xs text-rose-400">
+                                <Filter size={12} />
+                                <span className="font-semibold uppercase tracking-wider">Weak Areas Mode</span>
+                            </div>
+                        )}
+
+                        {/* Top Bar: Progress + Score + Timer */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex-1 mr-4">
+                                <div className="flex justify-between text-xs text-secondary mb-1.5">
+                                    <span>Question {currentIndex + 1}/{total}</span>
+                                    <span className="font-semibold text-primary">{score} correct</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-primary/10 overflow-hidden">
+                                    <motion.div
+                                        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"
+                                        initial={{ width: `${((currentIndex) / total) * 100}%` }}
+                                        animate={{ width: `${((currentIndex + 1) / total) * 100}%` }}
+                                        transition={{ duration: 0.5 }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Timer Ring */}
+                            <div className="relative w-12 h-12 flex-shrink-0">
+                                <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
+                                    <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
+                                    <circle
+                                        cx="20" cy="20" r="18" fill="none"
+                                        stroke={timerColor}
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
+                                    />
+                                </svg>
+                                <span className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${timeLeft <= 5 ? 'text-rose-500' : 'text-primary'}`}>
+                                    {timeLeft}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Question */}
+                        <div className="mb-6">
+                            <div className="flex items-start gap-3 mb-1">
+                                <span className="text-xs font-semibold text-secondary uppercase tracking-wider px-2 py-1 bg-primary/10 rounded whitespace-nowrap mt-0.5">
+                                    {currentQ.topic || 'General'}
+                                </span>
+                                {currentQ.type && (
+                                    <span className="text-xs font-medium text-violet-400 uppercase tracking-wider px-2 py-1 bg-violet-500/10 rounded whitespace-nowrap mt-0.5">
+                                        {currentQ.type}
                                     </span>
                                 )}
                             </div>
+                            <h4 className="text-xl font-semibold text-primary leading-relaxed mt-3">{currentQ.question}</h4>
+                        </div>
 
-                            {/* Question Text */}
-                            <h4 className="text-xl md:text-2xl font-semibold text-primary leading-relaxed mb-8">
-                                {item.question}
-                            </h4>
+                        {/* Answer Area */}
+                        {!showAnswer ? (
+                            <div className="space-y-3">
+                                <button
+                                    onClick={handleReveal}
+                                    className="w-full flex items-center justify-center gap-2 py-4 bg-primary/5 border border-primary/10 rounded-xl text-secondary hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-500/5 transition-all font-medium"
+                                >
+                                    <Eye size={18} /> Reveal Answer
+                                </button>
+                            </div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-4"
+                            >
+                                <div className="p-5 bg-violet-500/10 backdrop-blur-sm rounded-xl border border-violet-500/20">
+                                    <p className="text-sm text-violet-300/70 font-semibold uppercase tracking-wider mb-2">Answer</p>
+                                    <p className="text-primary font-medium leading-relaxed">{currentQ.answer}</p>
+                                </div>
 
-                            {/* Answer Section */}
-                            {!isRevealed ? (
-                                <motion.button
-                                    onClick={() => toggleReveal(currentIndex)}
-                                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border-2 border-dashed border-primary/15 text-secondary hover:text-violet-500 hover:border-violet-500/40 hover:bg-violet-500/5 transition-all duration-300 font-medium cursor-pointer"
-                                    whileHover={{ scale: 1.01 }}
-                                    whileTap={{ scale: 0.99 }}
-                                >
-                                    <Eye size={20} />
-                                    <span>Reveal Answer</span>
-                                </motion.button>
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 15 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    {/* Answer Display */}
-                                    <div className="p-5 rounded-2xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20 mb-5">
-                                        <div className="flex items-start gap-3">
-                                            <Sparkles size={18} className="text-violet-500 mt-1 flex-shrink-0" />
-                                            <p className="text-primary font-medium leading-relaxed">{item.answer}</p>
+                                {/* Self-Grade Buttons */}
+                                {!answeredRef.current[currentIndex] ? (
+                                    <div className="flex items-center justify-between gap-4 pt-2">
+                                        <p className="text-sm text-secondary font-medium">Did you know the answer?</p>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => handleGrade(true)}
+                                                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 font-semibold transition-colors border border-emerald-500/20"
+                                            >
+                                                <CheckCircle size={18} /> Yes
+                                            </button>
+                                            <button
+                                                onClick={() => handleGrade(false)}
+                                                className="flex items-center gap-2 px-5 py-2.5 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500/20 font-semibold transition-colors border border-rose-500/20"
+                                            >
+                                                <XCircle size={18} /> No
+                                            </button>
                                         </div>
                                     </div>
-
-                                    {/* Self-Grade */}
-                                    {!grade ? (
-                                        <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5">
-                                            <p className="text-sm text-secondary font-medium">Did you know the answer?</p>
-                                            <div className="flex gap-2">
-                                                <motion.button
-                                                    onClick={() => handleGrade(currentIndex, true, item.topic)}
-                                                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500/20 font-semibold text-sm transition-colors cursor-pointer"
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <CheckCircle2 size={16} /> I knew it
-                                                </motion.button>
-                                                <motion.button
-                                                    onClick={() => handleGrade(currentIndex, false, item.topic)}
-                                                    className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 font-semibold text-sm transition-colors cursor-pointer"
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                >
-                                                    <XCircle size={16} /> Not quite
-                                                </motion.button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className={`flex items-center gap-2 p-4 rounded-xl font-bold text-sm ${grade === 'correct'
-                                                    ? 'bg-emerald-500/10 text-emerald-500'
-                                                    : 'bg-red-500/10 text-red-400'
-                                                }`}
-                                        >
-                                            {grade === 'correct' ? (
-                                                <><CheckCircle2 size={18} /> Great job! You got it right.</>
+                                ) : (
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className={`flex items-center gap-2 text-sm font-bold ${answers[currentIndex]?.isCorrect ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                            {answers[currentIndex]?.isCorrect ? (
+                                                <><CheckCircle size={18} /> Correct!</>
                                             ) : (
-                                                <><XCircle size={18} /> No worries — this topic has been flagged for review.</>
+                                                <><XCircle size={18} /> {timeLeft === 0 && !answers[currentIndex]?.isCorrect ? "Time's up!" : 'Incorrect'}</>
                                             )}
-                                        </motion.div>
-                                    )}
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                                        </div>
+                                        <button
+                                            onClick={nextQuestion}
+                                            className="flex items-center gap-2 px-5 py-2.5 bg-violet-500/10 text-violet-400 rounded-xl hover:bg-violet-500/20 font-semibold transition-colors border border-violet-500/20"
+                                        >
+                                            {currentIndex + 1 >= total ? 'See Results' : 'Next'} <ArrowRight size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </motion.div>
+                )}
 
-            {/* ── Navigation ── */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-primary/10">
-                <button
-                    onClick={goPrev}
-                    disabled={currentIndex === 0 && !showResults}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-secondary hover:text-primary hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                >
-                    <ChevronLeft size={16} /> Previous
-                </button>
+                {/* RESULTS SCREEN */}
+                {mode === 'results' && (
+                    <motion.div
+                        key="results"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-center py-8"
+                    >
+                        {/* Score Circle */}
+                        <div className="relative w-32 h-32 mx-auto mb-6">
+                            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+                                <motion.circle
+                                    cx="50" cy="50" r="44" fill="none"
+                                    stroke={score / total >= 0.7 ? '#14b8a6' : score / total >= 0.4 ? '#f59e0b' : '#f43f5e'}
+                                    strokeWidth="6"
+                                    strokeLinecap="round"
+                                    strokeDasharray={2 * Math.PI * 44}
+                                    initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
+                                    animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - score / total) }}
+                                    transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-3xl font-black text-primary">{score}</span>
+                                <span className="text-xs text-secondary">/ {total}</span>
+                            </div>
+                        </div>
 
-                {/* Dot Indicators */}
-                <div className="flex gap-1.5">
-                    {quizData.map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => { setShowResults(false); setCurrentIndex(i); }}
-                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${i === currentIndex && !showResults
-                                    ? 'bg-violet-500 scale-125'
-                                    : grades[i] === 'correct'
-                                        ? 'bg-emerald-500/60'
-                                        : grades[i] === 'incorrect'
-                                            ? 'bg-red-400/60'
-                                            : 'bg-primary/15 hover:bg-primary/30'
-                                }`}
-                        />
-                    ))}
-                </div>
+                        <h3 className="text-2xl font-bold text-primary mb-1">
+                            {score / total >= 0.8 ? '🎉 Excellent!' : score / total >= 0.5 ? '👍 Good Effort!' : '💪 Keep Studying!'}
+                        </h3>
+                        <p className="text-secondary mb-6">
+                            You scored {score} out of {total} ({Math.round((score / total) * 100)}%)
+                            {filterMode === 'weak' && <span className="text-rose-400 ml-1">(Weak Areas)</span>}
+                        </p>
 
-                <button
-                    onClick={goNext}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
-                >
-                    {currentIndex === totalQuestions - 1 && !showResults ? 'See Results' : 'Next'} <ChevronRight size={16} />
-                </button>
-            </div>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <button
+                                onClick={() => startQuiz('all')}
+                                className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-violet-500/30 hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 border border-white/10"
+                            >
+                                <RotateCcw size={16} className="inline mr-2" /> Retake Full Quiz
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

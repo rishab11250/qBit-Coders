@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-    Upload, FileText, Youtube, CheckCircle2, ArrowRight, Sparkles
+    Upload, FileText, Youtube, CheckCircle2, ArrowRight, Sparkles, Image as ImageIcon, X
 } from 'lucide-react';
 import { motion } from 'framer-motion'; // Using Framer Motion for animations
 import useStudyStore from '../store/useStudyStore';
-import { processInput } from '../services/processingService'; // [NEW] Import Service
+import { processInput } from '../services/processingService';
+import { fileToBase64 } from '../services/aiService';
 import ModelSelector from './ui/ModelSelector'; // [NEW] Model Selector
 import Button from './ui/Button';
 import Loader from './ui/Loader';
@@ -17,11 +18,14 @@ const InputHub = ({ onGenerate }) => {
         videoUrl, setVideoUrl,
         isLoading, setLoading,
         error, setError,
-        setProcessedContent // [NEW] Store Action
+        setProcessedContent, // [NEW] Store Action
+        settings, updateSettings // [NEW] Settings actions
     } = useStudyStore();
 
     const [activeTab, setActiveTab] = useState('pdf');
-    const [localFiles, setLocalFiles] = useState([]); // [CHANGED] Array
+    const [localFiles, setLocalFiles] = useState([]);
+    const [imageFiles, setImageFiles] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
     const [processingStatus, setProcessingStatus] = useState('');
 
     const handleFileChange = async (e) => {
@@ -78,10 +82,31 @@ const InputHub = ({ onGenerate }) => {
                     };
                 }
 
+            } else if (activeTab === 'images' && imageFiles.length > 0) {
+                console.log(`🖼️ Processing ${imageFiles.length} images...`);
+                setProcessingStatus(`Converting ${imageFiles.length} images...`);
+
+                // Convert all images to base64 and pass directly to generate
+                const imageDataArray = [];
+                for (const imgFile of imageFiles) {
+                    const b64 = await fileToBase64(imgFile);
+                    imageDataArray.push({ mimeType: imgFile.type, data: b64 });
+                }
+
+                // Store as processedContent for the generate flow
+                setProcessedContent({
+                    sourceType: 'images',
+                    rawText: `[${imageFiles.length} images uploaded for analysis]`,
+                    chunks: [],
+                    imageData: imageDataArray
+                });
+                setExtractedText('[Image content]');
+                await onGenerate();
+                return; // onGenerate handles setLoading(false)
+
             } else if (activeTab === 'notes' && notes) {
-                result = await processInput(notes); // Treat notes as string input
+                result = await processInput(notes);
             } else if (activeTab === 'video' && videoUrl) {
-                // Video processing (assuming processInput handles string URL)
                 result = await processInput(videoUrl);
             }
 
@@ -111,8 +136,29 @@ const InputHub = ({ onGenerate }) => {
         }
     };
 
+    const handleImageChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            setImageFiles(prev => [...prev, ...files]);
+            // Generate previews
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    setImagePreviews(prev => [...prev, { name: file.name, src: ev.target.result }]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+
+    const removeImage = (index) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
     const isReady = () => {
         if (activeTab === 'pdf') return localFiles.length > 0 && !isLoading && !error;
+        if (activeTab === 'images') return imageFiles.length > 0 && !isLoading;
         if (activeTab === 'notes') return notes.length > 20;
         if (activeTab === 'video') return videoUrl.includes('youtube');
         return false;
@@ -163,11 +209,37 @@ const InputHub = ({ onGenerate }) => {
 
                         {/* [NEW] Model Selector */}
                         <motion.div
+                            data-tour="model-selector"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.6, delay: 0.1 }}
                         >
                             <ModelSelector />
+                        </motion.div>
+
+                        {/* [NEW] Quiz Count Selector */}
+                        <motion.div
+                            data-tour="quiz-settings"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="relative group min-w-[140px]"
+                        >
+                            <select
+                                value={settings.quizCount}
+                                onChange={(e) => updateSettings({ quizCount: Number(e.target.value) })}
+                                className="w-full appearance-none bg-primary/10 hover:bg-primary/20 text-primary text-sm font-bold px-4 py-2 pr-10 rounded-xl border border-primary/20 focus:outline-none focus:border-violet-500 transition-all cursor-pointer shadow-lg backdrop-blur-md"
+                                title="Number of Quiz Questions"
+                            >
+                                {[5, 10, 15, 20].map(n => (
+                                    <option key={n} value={n} className="bg-gray-900 text-white">
+                                        {n} Questions
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
+                                <Settings size={14} />
+                            </div>
                         </motion.div>
                     </div>
                 </div>
@@ -180,9 +252,10 @@ const InputHub = ({ onGenerate }) => {
                     className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/10 backdrop-blur-xl"
                 >
                     {/* Tabs */}
-                    <div className="flex border-b border-primary/10 bg-primary/5">
+                    <div className="flex border-b border-primary/10 bg-primary/5" data-tour="input-tabs">
                         {[
                             { id: 'pdf', icon: Upload, label: 'Upload PDF' },
+                            { id: 'images', icon: ImageIcon, label: 'Images' },
                             { id: 'notes', icon: FileText, label: 'Paste Notes' },
                             { id: 'video', icon: Youtube, label: 'YouTube Video' }
                         ].map(tab => (
@@ -220,6 +293,7 @@ const InputHub = ({ onGenerate }) => {
                         {/* PDF TAB */}
                         {activeTab === 'pdf' && (
                             <motion.div
+                                data-tour="upload-area"
                                 variants={tabVariants}
                                 initial="hidden"
                                 animate="visible"
@@ -261,6 +335,62 @@ const InputHub = ({ onGenerate }) => {
                                         </>
                                     )}
                                 </label>
+                            </motion.div>
+                        )}
+
+                        {/* IMAGES TAB */}
+                        {activeTab === 'images' && (
+                            <motion.div
+                                variants={tabVariants}
+                                initial="hidden"
+                                animate="visible"
+                            >
+                                <div
+                                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all group cursor-pointer
+                                        ${imageFiles.length > 0
+                                            ? 'border-emerald-500/50 bg-emerald-500/5'
+                                            : 'border-primary/10 hover:border-violet-500/50 hover:bg-primary/5'
+                                        }`}
+                                >
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                                        multiple
+                                        onChange={handleImageChange}
+                                        className="hidden"
+                                        id="image-upload"
+                                        disabled={isLoading}
+                                    />
+                                    <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center">
+                                        <div className="w-16 h-16 bg-primary/5 text-primary rounded-full flex items-center justify-center mb-4 border border-primary/10 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+                                            <ImageIcon size={30} />
+                                        </div>
+                                        <p className="text-lg font-medium text-primary mb-1">
+                                            {imageFiles.length > 0 ? `${imageFiles.length} image(s) selected` : 'Upload lecture slides or images'}
+                                        </p>
+                                        <p className="text-sm text-secondary">PNG, JPG, WEBP • Click or drag to add</p>
+                                    </label>
+                                </div>
+
+                                {/* Thumbnail Grid */}
+                                {imagePreviews.length > 0 && (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-5">
+                                        {imagePreviews.map((img, i) => (
+                                            <div key={i} className="relative group rounded-xl overflow-hidden border border-primary/10 aspect-square bg-primary/5">
+                                                <img src={img.src} alt={img.name} className="w-full h-full object-cover" />
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); removeImage(i); }}
+                                                    className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                                <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-0.5 text-[10px] text-white truncate">
+                                                    {img.name}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
@@ -325,18 +455,19 @@ const InputHub = ({ onGenerate }) => {
                         )}
                     </div>
 
-                    {/* Footer Action */}
                     <div className="p-6 md:p-8 border-t border-primary/10 bg-primary/5 flex justify-end">
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            className="w-full sm:w-auto min-w-[200px] text-lg shadow-xl hover:shadow-2xl hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 bg-gradient-to-r from-violet-600 to-indigo-600 border border-white/20"
-                            onClick={handleMainGenerate}
-                            disabled={!isReady() || isLoading}
-                            isLoading={isLoading}
-                        >
-                            Generate Study Plan <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-                        </Button>
+                        <div data-tour="generate-btn">
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                className="w-full sm:w-auto min-w-[200px] text-lg shadow-xl hover:shadow-2xl hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 bg-gradient-to-r from-violet-600 to-indigo-600 border border-white/20"
+                                onClick={handleMainGenerate}
+                                disabled={!isReady() || isLoading}
+                                isLoading={isLoading}
+                            >
+                                Generate Study Plan <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </div>
                     </div>
                 </motion.div>
             </div>

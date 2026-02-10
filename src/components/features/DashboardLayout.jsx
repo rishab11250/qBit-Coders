@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { FileText, Share2, AlertTriangle, HelpCircle, ArrowLeft, MessageSquare, Calendar } from 'lucide-react';
+import { FileText, Share2, AlertTriangle, HelpCircle, ArrowLeft, MessageSquare, Calendar, BarChart3, Check, Link2 } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import useStudyStore from '../../store/useStudyStore';
@@ -8,10 +8,12 @@ import Button from '../ui/Button';
 import ConceptGraph from '../ConceptGraph';
 import ChatPanel from './ChatPanel';
 import StudySchedule from './StudySchedule';
+import ProgressDashboard from './ProgressDashboard';
 
 const DashboardLayout = () => {
     const { summary, concepts, quiz, weakAreas, addWeakArea, reset } = useStudyStore();
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [shareToast, setShareToast] = useState(false);
     const containerRef = useRef(null);
 
     useGSAP(() => {
@@ -23,6 +25,27 @@ const DashboardLayout = () => {
             ease: "power3.out"
         });
     }, { scope: containerRef });
+
+    const handleShare = () => {
+        try {
+            const { summary, topics, concepts, quiz } = useStudyStore.getState();
+            const planData = { summary, topics, concepts, quiz };
+            const jsonStr = JSON.stringify(planData);
+            // Compress with btoa
+            const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            const shareUrl = `${window.location.origin}${window.location.pathname}#shared=${encoded}`;
+
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                setShareToast(true);
+                setTimeout(() => setShareToast(false), 3000);
+            }).catch(() => {
+                // Fallback: prompt user
+                prompt('Copy this link to share your study plan:', shareUrl);
+            });
+        } catch (err) {
+            console.error('Share failed:', err);
+        }
+    };
 
     return (
         <div ref={containerRef} className="relative z-10 min-h-screen pb-20">
@@ -38,12 +61,26 @@ const DashboardLayout = () => {
                             </div>
                             <h2 className="text-5xl font-bold text-primary tracking-tight leading-[1.1]">Your <span className="text-[var(--accent-primary)]">Study Plan</span></h2>
                         </div>
-                        <Button variant="secondary" onClick={reset} className="glass-panel text-primary text-sm px-6 py-3 rounded-xl hover:border-[var(--accent-primary)] transition-colors">
-                            <ArrowLeft size={16} className="mr-2" />
-                            New Analysis
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button variant="secondary" onClick={handleShare} className="glass-panel text-primary text-sm px-5 py-3 rounded-xl hover:border-violet-500/50 transition-colors">
+                                <Share2 size={16} className="mr-2" />
+                                Share
+                            </Button>
+                            <Button variant="secondary" onClick={reset} className="glass-panel text-primary text-sm px-6 py-3 rounded-xl hover:border-[var(--accent-primary)] transition-colors">
+                                <ArrowLeft size={16} className="mr-2" />
+                                New Analysis
+                            </Button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Share Toast */}
+                {shareToast && (
+                    <div className="fixed top-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium shadow-2xl backdrop-blur-md animate-slide-in">
+                        <Check size={16} />
+                        Link copied to clipboard!
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-12">
 
@@ -144,6 +181,18 @@ const DashboardLayout = () => {
                         <StudySchedule />
                     </div>
 
+                    {/* Progress Dashboard Section */}
+                    <section className="gsap-stagger">
+                        <div className="mb-6 flex items-center gap-3">
+                            <BarChart3 size={22} className="text-violet-400" />
+                            <h3 className="text-2xl font-bold text-primary">Your Progress</h3>
+                            <div className="h-px flex-1 bg-primary/10"></div>
+                        </div>
+                        <div className="glass-panel rounded-2xl p-6 md:p-8">
+                            <ProgressDashboard />
+                        </div>
+                    </section>
+
                 </div>
             </div>
 
@@ -151,7 +200,7 @@ const DashboardLayout = () => {
             <div className="fixed bottom-8 right-8 z-50">
                 <button
                     onClick={() => setIsChatOpen(true)}
-                    className="group p-4 bg-[var(--bg-secondary)] text-primary hover:text-[var(--accent-primary)] rounded-full shadow-2xl transition-all duration-300 border border-primary/10 hover:border-[var(--accent-primary)] hover:scale-110"
+                    className="group p-4 bg-[var(--bg-secondary)] text-primary hover:text-[var(--accent-primary)] rounded-full shadow-2xl transition-all duration-300 border border-white/10 hover:border-[var(--accent-primary)] hover:scale-110"
                 >
                     <MessageSquare size={24} strokeWidth={1.5} />
                 </button>

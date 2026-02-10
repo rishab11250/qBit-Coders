@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Calendar, Clock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, CheckCircle2, AlertCircle, Play } from 'lucide-react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import useStudyStore from '../../store/useStudyStore';
@@ -7,7 +7,7 @@ import { generateSchedule } from '../../services/aiService';
 import Button from '../ui/Button';
 
 const StudySchedule = () => {
-    const { summary, studySchedule, setSchedule } = useStudyStore();
+    const { summary, studySchedule, setSchedule, setPomodoroTopic } = useStudyStore();
 
     const [deadline, setDeadline] = useState('');
     const [hoursPerDay, setHoursPerDay] = useState(2);
@@ -166,12 +166,19 @@ const StudySchedule = () => {
 
                                     <div className="space-y-3 flex-grow">
                                         {dayPlan.tasks.map((task, tIndex) => (
-                                            <div key={tIndex} className="flex items-start gap-3">
+                                            <div key={tIndex} className="flex items-start gap-3 group/task">
                                                 <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/20 group-hover:bg-[var(--accent-teal)] transition-colors flex-shrink-0"></div>
-                                                <div>
+                                                <div className="flex-1">
                                                     <p className="text-sm text-secondary group-hover:text-primary transition-colors">{task.activity}</p>
                                                     <p className="text-[10px] font-mono text-secondary/60 mt-0.5">{task.time}</p>
                                                 </div>
+                                                <button
+                                                    onClick={() => setPomodoroTopic(task.activity)}
+                                                    title="Start Pomodoro Timer"
+                                                    className="mt-0.5 p-1.5 rounded-lg opacity-0 group-hover/task:opacity-100 bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-all border border-violet-500/20 flex-shrink-0"
+                                                >
+                                                    <Play size={12} />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
