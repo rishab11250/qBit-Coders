@@ -23,11 +23,8 @@
     "react-d3-tree": "^3.6.6",
     "react-day-picker": "^9.13.2",
     "react-dom": "^19.2.0",
-    "react-force-graph-2d": "^1.29.1",
     "recharts": "^3.7.0",
     "three": "^0.182.0",
-    "youtube-caption-scraper": "^1.0.0",
-    "youtube-transcript": "^1.2.1",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
