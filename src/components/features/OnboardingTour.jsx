@@ -248,14 +248,16 @@ const OnboardingTour = () => {
 
                         <div className="flex items-center justify-between">
                             <div className="flex gap-1.5">
-                                {TOUR_STEPS.map((_, i) => (
-                                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentStep ? 'bg-violet-500 w-6' : 'w-2 bg-white/10'}`} />
+                                {steps.map((_, i) => (
+                                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentStepIndex ? 'bg-violet-500 w-6' : 'w-2 bg-white/10'}`} />
                                 ))}
                             </div>
                             <div className="flex items-center gap-2">
-                                {currentStep > 0 && <button onClick={prevStep} className="px-3 py-1.5 rounded-lg text-xs font-medium text-secondary hover:text-primary hover:bg-white/5 transition-colors">Back</button>}
+                                {currentStepIndex > 0 && <button onClick={prevStep} className="px-3 py-1.5 rounded-lg text-xs font-medium text-secondary hover:text-primary hover:bg-white/5 transition-colors">Back</button>}
                                 <button onClick={completeTour} className="px-3 py-1.5 rounded-lg text-xs font-medium text-secondary hover:text-primary hover:bg-white/5 transition-colors">Skip</button>
-                                <button onClick={nextStep} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 text-white hover:bg-violet-500 transition-colors flex items-center gap-1">{currentStep + 1 >= TOUR_STEPS.length ? 'Finish' : 'Next'} <ArrowRight size={12} /></button>
+                                <button onClick={nextStep} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-violet-600 text-white hover:bg-violet-500 transition-colors flex items-center gap-1">
+                                    {currentStepIndex + 1 >= steps.length ? 'Finish' : 'Next'} <ArrowRight size={12} />
+                                </button>
                             </div>
                         </div>
                     </div>
