@@ -269,7 +269,7 @@ const useStudyStore = create(
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
-            version: 6, // Bump version to 6 for planHistory
+            version: 7, // Bump version: force model to gemini-2.0-flash
             migrate: (persistedState, version) => {
                 if (version < 4) {
                     const currentModel = persistedState?.settings?.model;
@@ -293,6 +293,16 @@ const useStudyStore = create(
                             totalPlansGenerated: 0,
                             studyStreak: 0,
                             lastStudyDate: null
+                        }
+                    };
+                }
+                if (version < 7) {
+                    // Force model update: gemini-2.5-flash was too slow (thinking model)
+                    persistedState = {
+                        ...persistedState,
+                        settings: {
+                            ...persistedState?.settings,
+                            model: 'gemini-2.0-flash'
                         }
                     };
                 }
