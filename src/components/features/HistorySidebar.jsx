@@ -21,7 +21,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         onClick={() => onToggle(true)}
-                        className="fixed left-4 top-6 z-50 p-2 bg-primary/10 hover:bg-primary/20 backdrop-blur-md border border-primary/10 rounded-lg text-primary shadow-lg transition-colors"
+                        className="fixed left-4 top-24 z-40 p-2 bg-primary/10 hover:bg-primary/20 backdrop-blur-md border border-primary/10 rounded-lg text-primary shadow-lg transition-colors"
                     >
                         <History size={20} />
                     </motion.button>
@@ -33,10 +33,10 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 initial="open"
                 animate={isOpen ? "open" : "closed"}
                 variants={sidebarVariants}
-                className="fixed left-0 top-0 bottom-0 z-50 glass-panel border-r border-white/10 bg-slate-950/95 backdrop-blur-xl flex flex-col shadow-2xl"
+                className="fixed left-0 top-20 bottom-0 z-40 glass-panel border-r border-white/10 bg-slate-950/95 backdrop-blur-xl flex flex-col shadow-2xl"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/5 mt-2">
+                <div className="flex items-center justify-between p-4 border-b border-white/5 mt-0">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <History size={20} className="text-violet-500 shrink-0" />
                         <h3 className="font-semibold text-primary whitespace-nowrap">History</h3>
