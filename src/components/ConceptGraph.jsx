@@ -1,6 +1,70 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import Tree from 'react-d3-tree';
+import { Info, Move, ZoomIn, MousePointerClick, X } from 'lucide-react';
 import useStudyStore from "../store/useStudyStore";
+
+/* =========================================================
+   USAGE GUIDE COMPONENT
+   ========================================================= */
+const GraphUsageGuide = () => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="absolute top-4 right-4 z-20 flex flex-col items-end">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border transition-all duration-300 shadow-lg group
+                    ${isOpen
+                        ? 'bg-violet-600 border-violet-500 text-white'
+                        : 'bg-black/30 border-white/10 text-white/70 hover:bg-black/50 hover:text-white hover:border-white/30'
+                    }`}
+            >
+                {isOpen ? <X size={18} /> : <Info size={18} />}
+                <span className="text-sm font-medium">{isOpen ? 'Close Guide' : 'How to use'}</span>
+            </button>
+
+            <div className={`mt-3 transition-all duration-300 origin-top-right
+                ${isOpen
+                    ? 'opacity-100 scale-100 translate-y-0'
+                    : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'
+                }`}
+            >
+                <div className="glass-panel p-5 rounded-2xl border border-white/10 shadow-2xl bg-[#0f172a]/80 backdrop-blur-xl w-64">
+                    <h4 className="text-white font-semibold mb-3 border-b border-white/10 pb-2">Interactive Map</h4>
+                    <ul className="space-y-3">
+                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                            <div className="p-1.5 bg-violet-500/20 rounded-lg text-violet-400 mt-0.5">
+                                <Move size={14} />
+                            </div>
+                            <div>
+                                <strong className="block text-white text-xs uppercase tracking-wider mb-0.5">Pan</strong>
+                                Drag anywhere to move the canvas around.
+                            </div>
+                        </li>
+                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                            <div className="p-1.5 bg-cyan-500/20 rounded-lg text-cyan-400 mt-0.5">
+                                <ZoomIn size={14} />
+                            </div>
+                            <div>
+                                <strong className="block text-white text-xs uppercase tracking-wider mb-0.5">Zoom</strong>
+                                Scroll to zoom in/out for details.
+                            </div>
+                        </li>
+                        <li className="flex items-start gap-3 text-sm text-slate-300">
+                            <div className="p-1.5 bg-emerald-500/20 rounded-lg text-emerald-400 mt-0.5">
+                                <MousePointerClick size={14} />
+                            </div>
+                            <div>
+                                <strong className="block text-white text-xs uppercase tracking-wider mb-0.5">Expand</strong>
+                                Click nodes to reveal more connections.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 /* =========================================================
    SAFE ERROR BOUNDARY
@@ -318,6 +382,8 @@ const ConceptGraph = ({ concepts }) => {
             onMouseUp={() => setIsDragging(false)}
             onMouseLeave={() => { setIsDragging(false); setHoveredNode(null); }}
         >
+            <GraphUsageGuide />
+
             {/* SVG CSS for custom links */}
             <style>{`
                 .concept-tree-link {
