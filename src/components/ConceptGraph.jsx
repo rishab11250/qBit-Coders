@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import useStudyStore from '../store/useStudyStore';
 
 const ConceptGraph = ({ concepts }) => {
+    const { settings } = useStudyStore();
+    const isDark = settings.theme === 'dark';
+
     const graphData = useMemo(() => {
         if (!concepts) return { nodes: [], links: [] };
         const nodes = [];
@@ -34,7 +36,7 @@ const ConceptGraph = ({ concepts }) => {
                 nodeAutoColorBy="group"
                 nodeLabel="id"
                 backgroundColor="rgba(0,0,0,0)" // Transparent
-                linkColor={() => 'rgba(255,255,255,0.2)'}
+                linkColor={() => isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
                 nodeCanvasObject={(node, ctx, globalScale) => {
                     const label = node.id;
                     const fontSize = 14 / globalScale;
@@ -42,22 +44,27 @@ const ConceptGraph = ({ concepts }) => {
                     const textWidth = ctx.measureText(label).width;
                     const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.5);
 
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                    if (node.group === 1) ctx.fillStyle = 'rgba(139, 92, 246, 0.3)'; // Violet
-                    if (node.group === 2) ctx.fillStyle = 'rgba(236, 72, 153, 0.3)'; // Pink
+                    if (isDark) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    } else {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                    }
+
+                    if (node.group === 1) ctx.fillStyle = isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(124, 58, 237, 0.2)'; // Violet
+                    if (node.group === 2) ctx.fillStyle = isDark ? 'rgba(236, 72, 153, 0.3)' : 'rgba(219, 39, 119, 0.2)'; // Pink
 
                     ctx.beginPath();
                     ctx.roundRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions, 4);
                     ctx.fill();
 
                     // Border
-                    ctx.strokeStyle = node.group === 1 ? '#8b5cf6' : '#ec4899';
+                    ctx.strokeStyle = node.group === 1 ? (isDark ? '#8b5cf6' : '#7c3aed') : (isDark ? '#ec4899' : '#db2777');
                     ctx.lineWidth = 1 / globalScale;
                     ctx.stroke();
 
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = isDark ? '#ffffff' : '#1e293b';
                     ctx.fillText(label, node.x, node.y);
                 }}
             />

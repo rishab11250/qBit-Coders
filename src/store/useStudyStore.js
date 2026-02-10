@@ -42,10 +42,14 @@ const useStudyStore = create(
                 apiKey: '',
                 model: 'gemini-2.5-flash-lite',
                 difficulty: 'Intermediate',
-                quizCount: 5
+                quizCount: 5,
+                theme: 'dark' // Default theme
             },
 
             // Actions
+            toggleTheme: () => set((state) => ({
+                settings: { ...state.settings, theme: state.settings.theme === 'dark' ? 'light' : 'dark' }
+            })),
             setPdfFile: (file) => set({ pdfFile: file }),
             setExtractedText: (text) => set({ extractedText: text }),
             setNotes: (notes) => set({ notes }),

@@ -120,20 +120,20 @@ const InputHub = ({ onGenerate }) => {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-violet-500/30 text-violet-200 text-sm font-medium mb-6"
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-violet-500/30 text-violet-500 text-sm font-medium mb-6"
                     >
-                        <Sparkles size={14} className="text-violet-400" />
-                        <span>Powered by Gemini 1.5 Pro</span>
+                        <Sparkles size={14} className="text-violet-500" />
+                        <span>Powered by Gemini 2.5 Flash lite</span>
                     </motion.div>
 
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
-                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6"
+                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-primary mb-6"
                     >
                         Master any subject <br />
-                        <span className="text-gradient">
+                        <span className="text-primary font-bold">
                             in minutes.
                         </span>
                     </motion.h1>
@@ -142,7 +142,7 @@ const InputHub = ({ onGenerate }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto"
+                        className="text-lg md:text-xl text-secondary max-w-2xl mx-auto"
                     >
                         Upload your course materials, lecture notes, or YouTube videos.
                         Our AI creates personalized study plans instantly.
@@ -157,7 +157,7 @@ const InputHub = ({ onGenerate }) => {
                     className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/20"
                 >
                     {/* Tabs */}
-                    <div className="flex border-b border-white/10 bg-black/20">
+                    <div className="flex border-b border-white/10 bg-black/5">
                         {[
                             { id: 'pdf', icon: Upload, label: 'Upload PDF' },
                             { id: 'notes', icon: FileText, label: 'Paste Notes' },
@@ -168,16 +168,16 @@ const InputHub = ({ onGenerate }) => {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-medium transition-all relative overflow-hidden
                                     ${activeTab === tab.id
-                                        ? 'text-white bg-white/10'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                        ? 'text-primary bg-white/10'
+                                        : 'text-secondary hover:text-primary hover:bg-white/5'
                                     }`}
                             >
-                                <tab.icon size={18} className={activeTab === tab.id ? 'text-violet-400' : ''} />
-                                <span className={activeTab === tab.id ? 'text-violet-100' : ''}>{tab.label}</span>
+                                <tab.icon size={18} className={activeTab === tab.id ? 'text-primary' : ''} />
+                                <span className={activeTab === tab.id ? 'text-primary' : ''}>{tab.label}</span>
                                 {activeTab === tab.id && (
                                     <motion.div
                                         layoutId="activeTab"
-                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
                                     />
                                 )}
                             </button>
@@ -217,19 +217,19 @@ const InputHub = ({ onGenerate }) => {
                                 <label htmlFor="pdf-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center">
                                     {localFile ? (
                                         <>
-                                            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-4 neon-shadow">
+                                            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-4 neon-shadow">
                                                 <CheckCircle2 size={40} />
                                             </div>
-                                            <p className="text-xl font-medium text-white">{localFile.name}</p>
-                                            <p className="text-sm text-emerald-400 mt-2">{(localFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</p>
+                                            <p className="text-xl font-medium text-primary">{localFile.name}</p>
+                                            <p className="text-sm text-emerald-500 mt-2">{(localFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</p>
                                         </>
                                     ) : (
                                         <>
-                                            <div className="w-20 h-20 bg-white/5 text-violet-400 rounded-full flex items-center justify-center mb-6 border border-white/10 group-hover:scale-110 group-hover:bg-violet-500/20 group-hover:text-white transition-all duration-300">
+                                            <div className="w-20 h-20 bg-primary/5 text-primary rounded-full flex items-center justify-center mb-6 border border-primary/10 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
                                                 <Upload size={36} />
                                             </div>
-                                            <p className="text-xl font-medium text-white mb-2">Drop your PDF here</p>
-                                            <p className="text-sm text-gray-400">or click to browse functionality</p>
+                                            <p className="text-xl font-medium text-primary mb-2">Drop your PDF here</p>
+                                            <p className="text-sm text-secondary">or click to browse functionality</p>
                                         </>
                                     )}
                                 </label>

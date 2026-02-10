@@ -7,7 +7,12 @@ import Background3D from './components/ui/Background3D';
 import { generateStudyContent, fileToBase64 } from './services/aiService';
 
 const App = () => {
-  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError } = useStudyStore();
+  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings } = useStudyStore();
+
+  // Apply theme
+  useEffect(() => {
+    document.body.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -77,7 +82,7 @@ const App = () => {
         </main>
 
         <footer className="py-8 text-center text-slate-500 text-sm">
-          <p>© 2024 StudyFlow AI. Built for qBit-Coders.</p>
+          <p>&copy; 2026 StudyFlow AI. Built for qBit-Coders.</p>
         </footer>
       </div>
     </div>

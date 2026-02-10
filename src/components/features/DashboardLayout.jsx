@@ -33,16 +33,15 @@ const DashboardLayout = () => {
                 animate="visible"
             >
 
-                {/* Header Actions */}
                 <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
-                        <h2 className="text-4xl font-extrabold text-white tracking-tight">Your Study Plan</h2>
+                        <h2 className="text-4xl font-extrabold text-primary tracking-tight">Your Study Plan</h2>
                         <div className="flex items-center gap-2 mt-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <p className="text-slate-300">AI Analysis Complete</p>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <p className="text-secondary">AI Analysis Complete</p>
                         </div>
                     </div>
-                    <Button variant="secondary" onClick={reset} className="glass-panel hover:bg-white/10 text-white border-white/20">
+                    <Button variant="secondary" onClick={reset} className="glass-panel hover:bg-white/10 text-primary border-white/20">
                         <ArrowLeft size={16} className="mr-2" />
                         Analyze New Content
                     </Button>
@@ -56,12 +55,12 @@ const DashboardLayout = () => {
                         {/* Summary Section */}
                         <motion.section variants={itemVariants} className="glass-panel rounded-3xl p-8 border-violet-500/20">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 rounded-xl bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                                <div className="p-2 rounded-xl bg-violet-500/20 text-violet-500 border border-violet-500/30">
                                     <FileText size={24} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Executive Summary</h3>
+                                <h3 className="text-2xl font-bold text-primary">Executive Summary</h3>
                             </div>
-                            <div className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-lg">
+                            <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
                                 <p>{summary}</p>
                             </div>
                         </motion.section>
@@ -69,13 +68,13 @@ const DashboardLayout = () => {
                         {/* Concepts Section */}
                         <motion.section variants={itemVariants} className="glass-panel rounded-3xl p-8 border-fuchsia-500/20">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 rounded-xl bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30">
+                                <div className="p-2 rounded-xl bg-fuchsia-500/20 text-fuchsia-500 border border-fuchsia-500/30">
                                     <Share2 size={24} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Knowledge Graph</h3>
+                                <h3 className="text-2xl font-bold text-primary">Knowledge Graph</h3>
                             </div>
 
-                            <div className="h-[450px] w-full relative overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                            <div className="h-[450px] w-full relative overflow-hidden rounded-2xl border border-white/5 bg-black/5">
                                 <ConceptGraph concepts={concepts} />
                             </div>
                         </motion.section>
@@ -107,10 +106,10 @@ const DashboardLayout = () => {
                     <div className="lg:col-span-5 space-y-8">
                         <motion.section variants={itemVariants} className="glass-panel rounded-3xl p-8 border-cyan-500/20 sticky top-24">
                             <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-500 border border-cyan-500/30">
                                     <HelpCircle size={24} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Interactive Quiz</h3>
+                                <h3 className="text-2xl font-bold text-primary">Interactive Quiz</h3>
                             </div>
                             <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
                         </motion.section>
