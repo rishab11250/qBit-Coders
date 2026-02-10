@@ -8,7 +8,7 @@ import { processInput } from '../services/processingService';
 import { fileToBase64 } from '../services/aiService';
 import ModelSelector from './ui/ModelSelector'; // [NEW] Model Selector
 import Button from './ui/Button';
-import Loader from './ui/Loader';
+import PremiumLoadingState from './ui/PremiumLoadingState';
 import ErrorMessage from './ui/ErrorMessage';
 
 const InputHub = ({ onGenerate }) => {
@@ -262,11 +262,7 @@ const InputHub = ({ onGenerate }) => {
 
                     {/* Content Area */}
                     <div className="p-8 md:p-12 min-h-[350px] relative">
-                        {isLoading && (
-                            <div className="absolute inset-0 z-20 bg-primary/40 backdrop-blur-md flex items-center justify-center rounded-b-3xl">
-                                <Loader text={processingStatus || "Analyzing content..."} size="lg" />
-                            </div>
-                        )}
+                        <PremiumLoadingState isVisible={isLoading} />
 
                         {error && <ErrorMessage message={error} onDismiss={() => setError(null)} className="mb-6" />}
 
