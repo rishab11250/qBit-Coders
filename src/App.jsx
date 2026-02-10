@@ -9,7 +9,7 @@ import OnboardingTour from './components/features/OnboardingTour';
 import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
 
 const App = () => {
-  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated } = useStudyStore();
+  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated, isChatOpen } = useStudyStore();
   const [isSharedPlan, setIsSharedPlan] = useState(false);
 
   // Apply theme
@@ -132,9 +132,9 @@ const App = () => {
 
       {/* Main Content Layer */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Navbar />
+        {!isChatOpen && <Navbar />}
 
-        <main className="flex-1 pt-24">
+        <main className={`flex-1 ${currentStep !== 'input' && !isChatOpen ? 'pt-20' : ''}`}>
           {currentStep === 'input' ? (
             <InputHub onGenerate={handleGenerate} />
           ) : (

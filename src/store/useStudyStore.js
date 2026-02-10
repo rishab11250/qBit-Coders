@@ -53,6 +53,7 @@ const useStudyStore = create(
             isLoading: false,
             error: null,
             currentStep: 'input',
+            isChatOpen: false,
 
             // Settings State
             settings: {
@@ -98,6 +99,7 @@ const useStudyStore = create(
             setLoading: (isLoading) => set({ isLoading }),
             setError: (error) => set({ error }),
             setStep: (step) => set({ currentStep: step }),
+            setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
 
             // Chat Actions
             addChatMessage: (message) => set((state) => ({

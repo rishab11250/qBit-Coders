@@ -11,8 +11,7 @@ import StudySchedule from './StudySchedule';
 import ProgressDashboard from './ProgressDashboard';
 
 const DashboardLayout = () => {
-    const { summary, concepts, quiz, weakAreas, addWeakArea, reset } = useStudyStore();
-    const [isChatOpen, setIsChatOpen] = useState(false);
+    const { summary, concepts, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen } = useStudyStore();
     const [shareToast, setShareToast] = useState(false);
     const containerRef = useRef(null);
 
