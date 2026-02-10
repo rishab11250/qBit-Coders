@@ -1,195 +1,225 @@
-import React, { useMemo } from 'react';
-import useStudyStore from '../store/useStudyStore';
-import ForceGraph2D from 'react-force-graph-2d';
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import Tree from 'react-d3-tree';
+import useStudyStore from "../store/useStudyStore";
 
+/* =========================================================
+   SAFE ERROR BOUNDARY
+========================================================= */
 class GraphErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
         this.state = { hasError: false };
     }
 
-    static getDerivedStateFromError(error) {
+    static getDerivedStateFromError() {
         return { hasError: true };
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error("Concept Graph WebGL Error:", error, errorInfo);
+        console.error("ConceptGraph Error:", error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
             return (
-                <div className="w-full h-full flex items-center justify-center text-secondary text-sm bg-black/20 rounded-2xl border border-white/10 p-4">
-                    <p>Graph visualization unavailable (WebGL Context Lost). Please refresh.</p>
+                <div className="w-full h-full flex items-center justify-center text-sm text-secondary p-4">
+                    Graph crashed. (Render Error)
                 </div>
             );
         }
-
         return this.props.children;
     }
 }
 
+/* =========================================================
+   MAIN COMPONENT
+========================================================= */
 const ConceptGraph = ({ concepts }) => {
-    const { settings } = useStudyStore();
-    const [theme, setTheme] = React.useState('dark');
+    const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+    const containerRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
 
-    // Sync theme with DOM (since it's managed via data-theme attribute)
-    React.useEffect(() => {
-        const checkTheme = () => {
-            const currentTheme = document.body.getAttribute('data-theme') || 'dark';
-            setTheme(currentTheme);
+    // --- Resize Observer ---
+    useEffect(() => {
+        const handleResize = () => {
+            if (containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.clientWidth,
+                    height: containerRef.current.clientHeight
+                });
+            }
         };
 
-        // Check initially
-        checkTheme();
+        window.addEventListener("resize", handleResize);
+        setTimeout(handleResize, 100);
 
-        // Observer for theme changes
-        const observer = new MutationObserver(checkTheme);
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
-
-        return () => observer.disconnect();
+        return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const isLight = theme === 'light';
+    // --- Transform Data to Hierarchy ---
+    const treeData = useMemo(() => {
+        if (!concepts || concepts.length === 0) return null;
 
-    // Theme Colors
-    const colors = useMemo(() => isLight ? {
-        bg: 'transparent', // Canvas background
-        nodeText: '#562F00',
-        nodeSubText: '#8C6B45',
-        labelBg: 'rgba(255, 253, 241, 0.95)', // Cream with opacity
-        labelBorder: '#FFCE99',
-        link: 'rgba(86, 47, 0, 0.15)',
-        primary: '#FF9644', // Orange
-        secondary: '#14b8a6' // Teal
-    } : {
-        bg: 'transparent',
-        nodeText: '#e2e8f0',
-        nodeSubText: '#94a3b8',
-        labelBg: 'rgba(15, 23, 42, 0.85)', // Dark Slate
-        labelBorder: 'rgba(255,255,255,0.1)',
-        link: 'rgba(255,255,255,0.15)',
-        primary: '#8b5cf6', // Violet
-        secondary: '#14b8a6' // Teal
-    }, [isLight]);
+        // Create a root node
+        const root = {
+            name: "Key Concepts",
+            attributes: { isRoot: true },
+            children: []
+        };
 
-    const graphData = useMemo(() => {
-        if (!concepts) return { nodes: [], links: [] };
-        const nodes = [];
-        const links = [];
+        // Take top 5 concepts as parents
+        const topConcepts = concepts.slice(0, 5);
 
-        concepts.forEach((concept) => {
-            const mainNodeId = concept.name;
-            if (!nodes.find(n => n.id === mainNodeId)) {
-                nodes.push({ id: mainNodeId, group: 1, val: 25 });
+        topConcepts.forEach(concept => {
+            const name = concept.name || concept.id || concept;
+            const node = {
+                name: name,
+                attributes: { group: "main" },
+                children: []
+            };
+
+            // Add related concepts as children (fallback logic)
+            if (concept.related && Array.isArray(concept.related)) {
+                concept.related.slice(0, 4).forEach(rel => {
+                    node.children.push({
+                        name: rel,
+                        attributes: { group: "child" }
+                    });
+                });
+            } else {
+                // Fallback: find other concepts
+                const others = concepts.filter(c => (c.name || c) !== name).slice(0, 3);
+                others.forEach(o => {
+                    node.children.push({
+                        name: o.name || o,
+                        attributes: { group: "child" }
+                    });
+                });
             }
-
-            concept.related.forEach((relatedTerm) => {
-                if (!nodes.find(n => n.id === relatedTerm)) {
-                    nodes.push({ id: relatedTerm, group: 2, val: 12 });
-                }
-                links.push({ source: mainNodeId, target: relatedTerm });
-            });
+            root.children.push(node);
         });
 
-        return { nodes, links };
+        return root;
     }, [concepts]);
 
-    return (
-        <div className="w-full h-full min-h-[500px] bg-[var(--bg-secondary)] relative group">
-            <GraphErrorBoundary>
-                <ForceGraph2D
-                    graphData={graphData}
-                    dagMode="td"
-                    dagLevelDistance={120} // Increased vertical spacing
-                    backgroundColor={colors.bg}
-                    nodeAutoColorBy="group"
+    // --- Helper: Truncate Text ---
+    const truncate = (str, n) => {
+        if (!str) return "";
+        return str.length > n ? str.slice(0, n - 1) + "..." : str;
+    };
 
-                    /* Link Styling */
-                    linkColor={() => colors.link}
-                    linkWidth={1.5}
-                    linkDirectionalParticles={2}
-                    linkDirectionalParticleSpeed={0.005}
-                    linkDirectionalParticleWidth={2}
-                    linkCurvature={0} // Straight lines for cleaner tree look
+    // --- Custom Node Renderer (Pill Style) ---
+    const renderCustomNodeElement = ({ nodeDatum, toggleNode }) => {
+        const isRoot = nodeDatum.attributes?.isRoot;
+        const isMain = nodeDatum.attributes?.group === "main";
 
-                    /* Engine Settings - Increased spacing */
-                    d3VelocityDecay={0.3}
-                    d3AlphaDecay={0.01}
-                    cooldownTicks={150}
-                    nodeRelSize={8} // Controls horizontal spacing
+        // 1. Label
+        const fullLabel = nodeDatum.name;
+        const displayLabel = truncate(fullLabel, 24);
 
-                    /* Custom Node Rendering */
-                    nodeCanvasObject={(node, ctx, globalScale) => {
-                        const label = node.id;
-                        const fontSize = (node.group === 1 ? 14 : 11) / globalScale;
-                        ctx.font = `${node.group === 1 ? '600' : '400'} ${fontSize}px 'Outfit', sans-serif`;
+        // 2. Style Config (Sizing)
+        const fontSize = isRoot ? 16 : (isMain ? 14 : 12);
+        const fontWeight = isRoot || isMain ? "600" : "500";
+        const paddingX = isRoot ? 24 : (isMain ? 20 : 16);
+        const paddingY = isRoot ? 12 : (isMain ? 10 : 8);
+        const borderRadius = 8;
 
-                        const textWidth = ctx.measureText(label).width;
-                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.8);
+        // Approx width (font-dependent, 0.6em avg char width)
+        const charWidth = fontSize * 0.6;
+        const textWidth = displayLabel.length * charWidth;
+        const width = textWidth + (paddingX * 2);
+        const height = fontSize + (paddingY * 2);
 
-                        // Colors
-                        const nodeColor = node.group === 1 ? colors.primary : colors.secondary;
+        // 3. Color Hierarchy
+        // Root = Purple, Parents = Indigo, Children = Slate
+        let fill = "#0f172a"; // Slate-900 (Default BG)
+        let stroke = "#334155"; // Slate-700 (Default Border)
+        let textFill = "#cbd5e1"; // Slate-300 (Default Text)
 
-                        // Draw Node Glow
-                        ctx.shadowColor = nodeColor;
-                        ctx.shadowBlur = node.group === 1 ? 15 : 5;
+        if (isRoot) {
+            fill = "#2e1065"; // Purple-950 (optional deep bg)
+            stroke = "#a855f7"; // Purple-500
+            textFill = "#f3e8ff"; // Purple-100
+        } else if (isMain) {
+            fill = "#1e1b4b"; // Indigo-950
+            stroke = "#6366f1"; // Indigo-500
+            textFill = "#e0e7ff"; // Indigo-100
+        }
 
-                        // Draw Node Circle
-                        ctx.beginPath();
-                        ctx.arc(node.x, node.y, (node.group === 1 ? 6 : 4), 0, 2 * Math.PI, false);
-                        ctx.fillStyle = nodeColor;
-                        ctx.fill();
-
-                        // Reset Shadow for text logic
-                        ctx.shadowBlur = 0;
-
-                        // Draw Label Background (Capsule)
-                        ctx.fillStyle = colors.labelBg;
-                        // For light mode, adding a shadow to the label makes it pop
-                        if (isLight) {
-                            ctx.shadowColor = 'rgba(0,0,0,0.1)';
-                            ctx.shadowBlur = 4;
-                        }
-
-                        ctx.beginPath();
-                        ctx.roundRect(
-                            node.x - bckgDimensions[0] / 2,
-                            node.y + 12,
-                            bckgDimensions[0],
-                            bckgDimensions[1],
-                            6
-                        );
-                        ctx.fill();
-
-                        // Reset Shadow again
-                        ctx.shadowBlur = 0;
-
-                        // Border for Label
-                        ctx.strokeStyle = colors.labelBorder;
-                        ctx.lineWidth = 1 / globalScale;
-                        ctx.stroke();
-
-                        // Draw Label Text
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillStyle = colors.nodeText;
-                        ctx.fillText(label, node.x, node.y + 12 + bckgDimensions[1] / 2);
-                    }}
+        return (
+            <g>
+                <rect
+                    width={width}
+                    height={height}
+                    x={-width / 2}
+                    y={-height / 2}
+                    rx={borderRadius}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={isRoot || isMain ? 2 : 1}
+                    onClick={toggleNode}
+                    style={{ cursor: "pointer" }}
                 />
+                <text
+                    fill={textFill}
+                    strokeWidth="0"
+                    x="0"
+                    y="0"
+                    dy=".35em"
+                    fontSize={fontSize}
+                    fontWeight={fontWeight}
+                    textAnchor="middle"
+                    onClick={toggleNode}
+                    style={{ cursor: "pointer", pointerEvents: "none" }} // Click through
+                >
+                    {displayLabel}
+                </text>
+            </g>
+        );
+    };
 
-                {/* Legend Overlay */}
-                <div className="absolute bottom-4 right-4 flex gap-4 text-xs font-medium text-secondary bg-[var(--bg-secondary)]/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-primary/10 shadow-sm">
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(var(--accent-primary),0.6)]"></span>
-                        <span>Key Concepts</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.6)]"></span>
-                        <span>Related Topics</span>
-                    </div>
-                </div>
+    if (!treeData) return null;
+
+    return (
+        <div
+            ref={containerRef}
+            className="w-full h-[500px] bg-[var(--bg-secondary)] rounded-2xl overflow-hidden relative"
+            style={{ border: 'none', boxShadow: 'none', cursor: isDragging ? "grabbing" : "grab" }}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+        >
+            <GraphErrorBoundary>
+                <Tree
+                    data={treeData}
+                    orientation="vertical"
+                    pathFunc="step" // Clean right angles
+                    translate={{ x: dimensions.width / 2, y: 80 }}
+
+                    // --- Sizing & Spacing ---
+                    nodeSize={{ x: 340, y: 140 }}
+                    separation={{ siblings: 2.7, nonSiblings: 3.2 }}
+
+                    // --- Styling ---
+                    renderCustomNodeElement={renderCustomNodeElement}
+                    enableLegacyTransitions={true}
+                    transitionDuration={300} // Fast snap
+
+                    // --- Links ---
+                    zoomable={true}
+                    draggable={true}
+                    depthFactor={undefined}
+
+                    // --- Link Styling via CSS Class ---
+                    pathClassFunc={() => "tree-link"}
+                />
             </GraphErrorBoundary>
+
+            {/* Status / Instructions */}
+            <div className="absolute top-6 right-6 flex items-center gap-3 whitespace-nowrap z-10 pointer-events-none">
+                <span className="text-xs font-medium text-slate-500 opacity-60">Interactive Tree Graph</span>
+                <span className="text-xs text-slate-600 opacity-50">Click to collapse • Drag to pan</span>
+            </div>
         </div>
     );
 };

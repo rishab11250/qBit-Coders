@@ -204,3 +204,10 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-primary);
 }
+
+/* Tree Graph Links */
+.tree-link {
+  stroke: rgba(255, 255, 255, 0.18) !important;
+  stroke-width: 1.3px !important;
+  fill: none !important;
+}
