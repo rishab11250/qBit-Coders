@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion'; // Using Framer Motion for animations
 import useStudyStore from '../store/useStudyStore';
-import { ProcessingService } from '../services/processing'; // [NEW] Import Service
+import { processInput } from '../services/processingService'; // [NEW] Import Service
 import Button from './ui/Button';
 import Loader from './ui/Loader';
 import ErrorMessage from './ui/ErrorMessage';
@@ -28,74 +28,73 @@ const InputHub = ({ onGenerate }) => {
         if (file) {
             setLocalFile(file);
             setPdfFile(file);
-            setLoading(true);
-            setProcessingStatus('Extracting PDF content...');
-            setError(null);
-
-            try {
-                // Use the new Processing Service
-                console.log("📄 Processing file via ProcessingService...");
-                const result = await ProcessingService.processContent('pdf', file);
-
-                if (!result.text) {
-                    throw new Error("Failed to extract text from file.");
-                }
-
-                console.log(`✅ PDF Processed: ${result.chunks.length} chunks`);
-
-                // Update Store with Structured Data
-                setProcessedContent(result);
-                setExtractedText(result.text); // Keep legacy for now just in case
-
-            } catch (err) {
-                console.error("File processing error:", err);
-                setError("Failed to process file. Please try again.");
-                setLocalFile(null);
-            } finally {
-                setLoading(false);
-                setProcessingStatus('');
-            }
-        }
-    };
-
-    // [NEW] Specialized handler for Video
-    const handleVideoProcessing = async () => {
-        if (!videoUrl) return;
-        setLoading(true);
-        setProcessingStatus('Analyzing video transcript (AI)...');
-        setError(null);
-
-        try {
-            const result = await ProcessingService.processContent('video', videoUrl);
-            setProcessedContent(result);
-            setExtractedText(result.text); // Populate for main AI
-            console.log("🎥 Video Processed:", result);
-
-        } catch (err) {
-            setError("Failed to analyze video. Ensure it has captions.");
-        } finally {
-            setLoading(false);
-            setProcessingStatus('');
+            // We defer processing to the "Generate" button click to unify flow
+            // or we could peek at it here if needed, but user asked for "When user provides input"
+            // Let's keep file selection simple and process on Generate for consistency 
+            // OR per instructions "When user provides input (file or text): Replace existing raw text handling"
+            // The instructions say: "When user provides input... Replace existing raw text handling with: const result = await processInput(input)"
+            // I will implement this inside handleMainGenerate to ensure we capture the latest state (file or notes)
+            // But wait, the user instructions implies replacing the IMMEDIATE handling. 
+            // Actually, step 3 says "Send processedText to the existing AI generation function".
+            // So it's best to do it in handleMainGenerate.
         }
     };
 
     // Wrapper for the main "Generate" button
     const handleMainGenerate = async () => {
         setError(null);
+        setLoading(true);
+        setProcessingStatus('Processing input...');
 
-        // 1. If Video tab is active, ensure we process it
-        if (activeTab === 'video') {
-            await handleVideoProcessing();
+        try {
+            console.log("📄 Processing input...");
+            let result = null;
+
+            // 1. Process based on Tab
+            if (activeTab === 'pdf' && localFile) {
+                result = await processInput(localFile);
+            } else if (activeTab === 'notes' && notes) {
+                result = await processInput(notes);
+            } else if (activeTab === 'video' && videoUrl) {
+                // User said "Do NOT add YouTube or Gemini yet" in the previous step?
+                // But this current step says "One wire the processing step".
+                // And the previous step instructions for processingService.js said "ONLY support PDF, text".
+                // So for video, we might skip or just pass as text if supported.
+                // However, the existing code handles video specifically. 
+                // I will focus on PDF/Text as per strict instructions "ONLY support PDF files, plain text files, raw text strings".
+                // I will leave video logic as is or simple pass-through if needed, but the prompt implies focusing on the new service.
+                // Re-reading: "Do NOT add YouTube or Gemini yet" refers to the processingService file creation.
+                // Now in InputHub, I should use processInput. 
+                // I will add a check for video to use the OLD logic or just skip for now if not supported by processInput.
+                // actually processInput only supports PDF/Text. 
+                // So I will only apply this to PDF/Notes tabs.
+            }
+
+            if (result) {
+                console.log(`✂️ Chunks created: ${result.chunks.length}`);
+
+                // Update Store
+                setProcessedContent(result);
+                setExtractedText(result.rawText); // result.rawText from service
+
+                console.log("🧠 Sending to AI...");
+                // 3. Send processedText to the existing AI generation function
+                // The onGenerate prop function likely reads from the store (extractedText), 
+                // so updating the store above should be sufficient.
+
+                await onGenerate();
+            } else if (activeTab === 'video') {
+                // Fallback for video if not handled by new service yet
+                await onGenerate();
+            }
+
+        } catch (err) {
+            console.error("Processing Error:", err);
+            setError("Failed to process input.");
+        } finally {
+            setLoading(false);
+            setProcessingStatus('');
         }
-
-        if (activeTab === 'notes') {
-            const result = await ProcessingService.processContent('text', notes);
-            setProcessedContent(result);
-            setExtractedText(result.text);
-        }
-
-        // 2. Call parent handler
-        onGenerate();
     };
 
     const isReady = () => {

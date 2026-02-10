@@ -92,6 +92,12 @@ const useStudyStore = create(
                 extractedText: '',
                 notes: '',
                 videoUrl: '',
+                processedContent: {
+                    type: null,
+                    text: '',
+                    chunks: [],
+                    metadata: {}
+                }, // [FIX] Reset processed content
                 summary: '',
                 topics: [],
                 concepts: [],
@@ -111,6 +117,7 @@ const useStudyStore = create(
                 extractedText: state.extractedText,
                 notes: state.notes,
                 videoUrl: state.videoUrl,
+                processedContent: state.processedContent, // [FIX] Persist processed content
                 summary: state.summary,
                 topics: state.topics,
                 concepts: state.concepts,
