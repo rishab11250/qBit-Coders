@@ -57,25 +57,42 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
   const { difficulty, quizCount } = getSettings();
 
   const systemPrompt = `
-    You are an AI Study Coach.
-    Difficulty Level: ${difficulty}
-    From the given content:
-    - Generate short structured notes (5–8 points)
-    - Extract key topics (array)
-    - Identify core concepts and their related terms (for concept map)
-    - Generate exactly ${quizCount} quiz questions with answers at ${difficulty} level.
-    
-    Return ONLY valid JSON in this format:
+    You are an expert AI Study Coach and Curriculum Designer.
+    Your goal is to process the provided study material into a structured mastery plan.
+
+    **Configuration:**
+    - Difficulty Level: ${difficulty} (Adjust vocabulary and concept depth accordingly)
+    - Quiz Question Count: ${quizCount}
+
+    **Required Output Format (JSON ONLY):**
     {
-      "summary": "Concise summary of the material",
-      "topics": ["Topic 1", "Topic 2", "Topic 3"],
+      "summary": "High-level executive summary (3-4 sentences). Then, a bulleted list of 5-7 key takeaways.",
+      "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
       "concepts": [
-        { "name": "Concept Name", "related": ["Related 1", "Related 2"] }
+        { 
+          "name": "Main Concept", 
+          "related": ["Sub-concept 1", "Sub-concept 2", "Application A"] 
+        }
       ],
       "quiz": [
-        { "question": "Question?", "answer": "Answer", "topic": "Related Topic" }
+        { 
+          "question": "Clear, specific question?", 
+          "answer": "Correct answer with brief explanation why.", 
+          "topic": "Topic tag" 
+        }
       ]
     }
+
+    **Instructions for Quality:**
+    1. **Summary:** Do not just regurgitate. Synthesize the "Big Idea" first, then break down the details.
+    2. **Concept Graph:** Focus on relationships. "Related" terms should be sub-components, examples, or prerequisites of the "Main Concept". Avoid generic terms like "Definition" or "Importance".
+    3. **Quiz:** 
+       - Generate exactly ${quizCount} questions.
+       - Questions must strictly match the '${difficulty}' level.
+       - ${difficulty === 'Hard' ? 'Focus on application, analysis, and edge cases.' : difficulty === 'Medium' ? 'Mix conceptual understanding with basic application.' : 'Focus on definitions and basic recall.'}
+       - VARY the topics. Do not ask 5 questions about the same paragraph.
+
+    **Constraint:** Return ONLY the raw JSON. No markdown formatting (no \`\`\`json wrappers).
   `;
 
   // Construct payload
