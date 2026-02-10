@@ -196,7 +196,11 @@ const useStudyStore = create(
                 extractedText: state.extractedText,
                 notes: state.notes,
                 videoUrl: state.videoUrl,
-                processedContent: state.processedContent, // [FIX] Persist processed content
+                // [FIX] Persist processed content BUT exclude heavy imageData to prevent localStorage quota exceeded
+                processedContent: {
+                    ...state.processedContent,
+                    imageData: undefined // Don't persist chunks of base64 images
+                },
                 summary: state.summary,
                 topics: state.topics,
                 concepts: state.concepts,
