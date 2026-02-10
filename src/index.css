@@ -4,9 +4,9 @@
 
 /* Global Variables */
 @theme {
-  --color-primary: var(--accent-primary);
+  --color-primary: var(--text-primary);
   --color-secondary: var(--text-secondary);
-  --color-accent: #06b6d4;
+  --color-accent: var(--accent-primary);
   --color-bg-dark: #0f172a;
 
   --font-sans: 'Outfit', sans-serif;
