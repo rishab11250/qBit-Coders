@@ -76,58 +76,62 @@ const ProgressDashboard = () => {
         return null;
     };
 
-    // Empty state
-    if (quizHistory.length === 0 && studyStats.totalPlansGenerated === 0) {
-        return (
-            <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
-                    <BarChart3 size={28} className="text-secondary" />
-                </div>
-                <h4 className="text-lg font-semibold text-primary mb-2">No Progress Yet</h4>
-                <p className="text-secondary text-sm">Complete quizzes and generate study plans to start tracking your progress.</p>
-            </div>
-        );
-    }
-
     return (
         <div ref={containerRef} className="space-y-6">
             {/* Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[
-                    { label: 'Plans Generated', value: studyStats.totalPlansGenerated, icon: Target, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
-                    { label: 'Quizzes Taken', value: quizHistory.length, icon: Trophy, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-                    { label: 'Avg Score', value: `${avgScore}%`, icon: TrendingUp, color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/20' },
-                    { label: 'Study Streak', value: `${studyStats.studyStreak} day${studyStats.studyStreak !== 1 ? 's' : ''}`, icon: Flame, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
+                    { label: 'Plans Generated', value: studyStats.totalPlansGenerated, unit: null, icon: Target, iconColor: 'text-violet-400', iconBg: 'bg-violet-500/10', glow: 'hover:shadow-[0_0_20px_rgba(139,92,246,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Quizzes Taken', value: quizHistory.length, unit: null, icon: Trophy, iconColor: 'text-amber-400', iconBg: 'bg-amber-500/10', glow: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Avg Score', value: avgScore, unit: '%', icon: TrendingUp, iconColor: 'text-teal-400', iconBg: 'bg-teal-500/10', glow: 'hover:shadow-[0_0_20px_rgba(20,184,166,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Study Streak', value: studyStats.studyStreak, unit: studyStats.studyStreak === 1 ? 'day' : 'days', icon: Flame, iconColor: 'text-rose-400', iconBg: 'bg-rose-500/20', glow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.45)]', scale: 'hover:scale-[1.03]', valueColor: '!text-white', labelColor: '!text-white/70', extraClass: '!opacity-100' }
                 ].map((stat, i) => (
-                    <div key={i} className={`progress-card rounded-xl p-4 ${stat.bg} border ${stat.border} transition-all hover:scale-[1.02]`}>
-                        <stat.icon size={20} className={`${stat.color} mb-2`} />
-                        <p className="text-2xl font-bold text-primary">{stat.value}</p>
-                        <p className="text-xs text-secondary font-medium uppercase tracking-wider mt-1">{stat.label}</p>
+                    <div key={i} className={`progress-card rounded-2xl p-6 bg-white/5 backdrop-blur-xl border border-white/10 transition-all duration-300 hover:brightness-110 hover:shadow-lg ${stat.glow} ${stat.scale} ${stat.extraClass || ''} group`}>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className={`p-3 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
+                                <stat.icon size={24} className={stat.iconColor} />
+                            </div>
+                            <span className={`text-xs font-bold uppercase tracking-wider ${stat.labelColor}`}>{stat.label}</span>
+                        </div>
+                        <div className="h-10 flex items-end">
+                            <span className={`text-3xl font-bold leading-none tracking-tight ${stat.valueColor}`}>{stat.value}</span>
+                            {stat.unit && <span className={`text-sm ml-1 opacity-70 ${stat.valueColor}`}>{stat.unit}</span>}
+                        </div>
                     </div>
                 ))}
             </div>
 
-            {/* Charts Row */}
-            {quizHistory.length > 0 && (
+            {/* Charts or Empty State */}
+            {quizHistory.length === 0 && studyStats.totalPlansGenerated === 0 ? (
+                <div className="text-center py-12">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                        <BarChart3 size={28} className="text-secondary" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-primary mb-2">No Progress Yet</h4>
+                    <p className="text-secondary text-sm">Complete quizzes and generate study plans to start tracking your progress.</p>
+                </div>
+            ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Score Over Time */}
-                    <div className="progress-card rounded-2xl bg-[var(--bg-secondary)] border border-primary/5 p-5">
-                        <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">Quiz Scores Over Time</h4>
-                        <ResponsiveContainer width="100%" height={220}>
-                            <LineChart data={scoreData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
-                                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Line
-                                    type="monotone" dataKey="score"
-                                    stroke="#8b5cf6" strokeWidth={2.5}
-                                    dot={{ fill: '#8b5cf6', r: 4, strokeWidth: 0 }}
-                                    activeDot={{ r: 6, fill: '#a78bfa' }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {quizHistory.length > 0 && (
+                        <div className="progress-card rounded-2xl bg-[var(--bg-secondary)] border border-primary/5 p-5">
+                            <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">Quiz Scores Over Time</h4>
+                            <ResponsiveContainer width="100%" height={220}>
+                                <LineChart data={scoreData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
+                                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Line
+                                        type="monotone" dataKey="score"
+                                        stroke="#8b5cf6" strokeWidth={2.5}
+                                        dot={{ fill: '#8b5cf6', r: 4, strokeWidth: 0 }}
+                                        activeDot={{ r: 6, fill: '#a78bfa' }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
 
                     {/* Topic Performance */}
                     {topicData.length > 0 && (

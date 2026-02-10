@@ -137,8 +137,7 @@ const PomodoroTimer = () => {
 
     return (
         <motion.div
-            className={`fixed bottom-6 left-3 z-40 flex flex-col items-start justify-end ${isExpanded ? 'w-72' : 'w-14 h-14'
-                }`}
+            className={`fixed bottom-6 left-20 -translate-x-1/2 z-40 ${isExpanded ? 'flex flex-col items-start justify-end' : ''}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             initial={false}
