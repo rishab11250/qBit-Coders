@@ -13,7 +13,7 @@ const Navbar = () => {
                     className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 >
                     <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-1.5 rounded-lg shadow-lg shadow-violet-500/20">
-                        <Zap size={20} className="text-white fill-current" />
+                        <Zap size={20} className="text-primary fill-current" />
                     </div>
                     <span className="text-xl font-bold text-primary tracking-tight">
                         StudyFlow <span className="text-violet-500">AI</span>

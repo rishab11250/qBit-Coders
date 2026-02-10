@@ -15,7 +15,7 @@ const Button = ({
     const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg",
+        primary: "bg-[var(--accent-primary)] text-[var(--text-primary)] hover:opacity-90 shadow-md hover:shadow-lg",
         secondary: "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50",
         danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200",
         ghost: "text-gray-600 hover:bg-gray-100 hover:text-gray-900"

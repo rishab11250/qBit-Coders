@@ -7,14 +7,15 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: {
-                    50: '#eef2ff',
-                    100: '#e0e7ff',
-                    500: '#6366f1',
-                    600: '#4f46e5',
-                    700: '#4338ca',
+                // Map to CSS variables for theme support
+                primary: 'var(--text-primary)',
+                secondary: 'var(--text-secondary)',
+                accent: {
+                    DEFAULT: 'var(--accent-primary)',
+                    teal: 'var(--accent-teal)',
+                    amber: 'var(--accent-amber)',
                 },
-                surface: '#ffffff',
+                surface: 'var(--bg-secondary)',
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],

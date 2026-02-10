@@ -29,8 +29,8 @@
   /* More subtle */
 
   /* Accents - High Contrast & Limited Palette */
-  --accent-primary: #8b5cf6;
-  /* Violet (Brand) */
+  --accent-primary: #FFFFFF;
+  /* White (was Violet) */
   --accent-teal: #14b8a6;
   /* Teal (Success/Growth) */
   --accent-amber: #f59e0b;
@@ -40,13 +40,21 @@
 }
 
 body[data-theme='light'] {
-  --bg-primary: #FAFAFA;
+  --bg-primary: #FFFDF1;
+  /* Light Cream */
   --bg-secondary: #FFFFFF;
-  --text-primary: #171717;
-  --text-secondary: #525252;
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.05);
-  --accent-primary: #7c3aed;
+  /* White */
+  --text-primary: #562F00;
+  /* Dark Brown */
+  --text-secondary: #8C6B45;
+  /* Lighter Brown (Readable) */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: #FFCE99;
+  /* Peach Border */
+  --accent-primary: #FF9644;
+  /* Orange */
+  --accent-teal: #14b8a6;
+  /* Preserved for success states */
 }
 
 body {

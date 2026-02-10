@@ -82,7 +82,7 @@ const ModelSelector = () => {
         <div className="relative inline-block text-left z-50" ref={containerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-white/10 text-sm font-medium hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-primary/10 text-sm font-medium hover:bg-primary/5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/50"
             >
                 <currentModel.icon size={14} className={currentModel.color} />
                 <span className="text-secondary">{currentModel.name}</span>
@@ -96,7 +96,7 @@ const ModelSelector = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl glass-panel border border-white/10 shadow-xl overflow-hidden backdrop-blur-xl bg-black/90"
+                        className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl glass-panel border border-primary/10 shadow-xl overflow-hidden backdrop-blur-xl bg-surface/90"
                     >
                         <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar">
                             {models.map((model) => {
@@ -109,17 +109,17 @@ const ModelSelector = () => {
                                         onClick={() => !isLimited && handleSelect(model.id)}
                                         disabled={isLimited}
                                         className={`w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-all group relative
-                                            ${isSelected ? 'bg-white/10' : 'hover:bg-white/5'}
+                                            ${isSelected ? 'bg-primary/10' : 'hover:bg-primary/5'}
                                             ${isLimited ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                                         `}
                                     >
-                                        <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${isSelected ? 'bg-white/10' : ''}`}>
+                                        <div className={`mt-0.5 p-2 rounded-lg bg-primary/5 ${isSelected ? 'bg-primary/10' : ''}`}>
                                             {isLimited ? <AlertCircle size={16} className="text-red-400" /> : <model.icon size={16} className={model.color} />}
                                         </div>
 
                                         <div className="text-left flex-1">
                                             <div className="flex justify-between items-center">
-                                                <p className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary group-hover:text-white'}`}>
+                                                <p className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-secondary group-hover:text-primary'}`}>
                                                     {model.name}
                                                 </p>
                                                 {isLimited && (
@@ -146,7 +146,7 @@ const ModelSelector = () => {
                                 );
                             })}
                         </div>
-                        <div className="p-2 bg-white/5 border-t border-white/5 text-[10px] text-center text-secondary/40">
+                        <div className="p-2 bg-primary/5 border-t border-primary/5 text-[10px] text-center text-secondary/40">
                             Auto-switches if model is busy
                         </div>
                     </motion.div>

@@ -182,7 +182,7 @@ const InputHub = ({ onGenerate }) => {
                     className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/20"
                 >
                     {/* Tabs */}
-                    <div className="flex border-b border-white/10 bg-black/5">
+                    <div className="flex border-b border-primary/10 bg-primary/5">
                         {[
                             { id: 'pdf', icon: Upload, label: 'Upload PDF' },
                             { id: 'notes', icon: FileText, label: 'Paste Notes' },
@@ -193,8 +193,8 @@ const InputHub = ({ onGenerate }) => {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-medium transition-all relative overflow-hidden
                                     ${activeTab === tab.id
-                                        ? 'text-primary bg-white/10'
-                                        : 'text-secondary hover:text-primary hover:bg-white/5'
+                                        ? 'text-primary bg-primary/10'
+                                        : 'text-secondary hover:text-primary hover:bg-primary/5'
                                     }`}
                             >
                                 <tab.icon size={18} className={activeTab === tab.id ? 'text-primary' : ''} />
@@ -228,7 +228,7 @@ const InputHub = ({ onGenerate }) => {
                                 className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all h-full flex flex-col items-center justify-center group
                                     ${localFiles.length > 0
                                         ? 'border-emerald-500/50 bg-emerald-500/10'
-                                        : 'border-white/10 hover:border-violet-500/50 hover:bg-white/5'
+                                        : 'border-primary/10 hover:border-violet-500/50 hover:bg-primary/5'
                                     }`}
                             >
                                 <input
@@ -313,7 +313,7 @@ const InputHub = ({ onGenerate }) => {
                     </div>
 
                     {/* Footer Action */}
-                    <div className="p-6 md:p-8 border-t border-white/10 bg-white/5 flex justify-end">
+                    <div className="p-6 md:p-8 border-t border-primary/10 bg-primary/5 flex justify-end">
                         <Button
                             variant="primary"
                             size="lg"

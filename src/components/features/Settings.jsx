@@ -23,7 +23,7 @@ const Settings = () => {
         <>
             <button
                 onClick={handleOpen}
-                className="p-2 text-secondary hover:text-primary hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
                 title="Settings"
             >
                 <SettingsIcon size={20} />
@@ -40,12 +40,12 @@ const Settings = () => {
                         <select
                             value={localSettings.model}
                             onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
-                            className="w-full px-3 py-2 bg-white/5 border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
+                            className="w-full px-3 py-2 bg-primary/5 border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
                         >
-                            <option value="gemini-2.5-flash" className="bg-slate-900 text-white">Gemini 2.5 Flash (Fast & Balanced)</option>
-                            <option value="gemini-2.0-flash" className="bg-slate-900 text-white">Gemini 2.0 Flash (Stable)</option>
-                            <option value="gemini-2.5-pro" className="bg-slate-900 text-white">Gemini 2.5 Pro (Smartest)</option>
-                            <option value="gemini-2.0-flash-001" className="bg-slate-900 text-white">Gemini 2.0 Flash 001 (Pinned)</option>
+                            <option value="gemini-2.5-flash" className="bg-surface text-primary">Gemini 2.5 Flash (Fast & Balanced)</option>
+                            <option value="gemini-2.0-flash" className="bg-surface text-primary">Gemini 2.0 Flash (Stable)</option>
+                            <option value="gemini-2.5-pro" className="bg-surface text-primary">Gemini 2.5 Pro (Smartest)</option>
+                            <option value="gemini-2.0-flash-001" className="bg-surface text-primary">Gemini 2.0 Flash 001 (Pinned)</option>
                         </select>
                     </div>
 
@@ -71,11 +71,11 @@ const Settings = () => {
                             <select
                                 value={localSettings.difficulty}
                                 onChange={(e) => setLocalSettings({ ...localSettings, difficulty: e.target.value })}
-                                className="w-full px-3 py-2 bg-white/5 border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
+                                className="w-full px-3 py-2 bg-primary/5 border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
                             >
-                                <option value="Beginner" className="bg-slate-900 text-white">Beginner</option>
-                                <option value="Intermediate" className="bg-slate-900 text-white">Intermediate</option>
-                                <option value="Advanced" className="bg-slate-900 text-white">Advanced</option>
+                                <option value="Beginner" className="bg-surface text-primary">Beginner</option>
+                                <option value="Intermediate" className="bg-surface text-primary">Intermediate</option>
+                                <option value="Advanced" className="bg-surface text-primary">Advanced</option>
                             </select>
                         </div>
                     </div>
