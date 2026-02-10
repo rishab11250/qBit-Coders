@@ -40,19 +40,19 @@
 }
 
 body[data-theme='light'] {
-  --bg-primary: #FFFDF1;
-  /* Light Cream */
-  --bg-secondary: #FFFFFF;
-  /* White */
-  --text-primary: #562F00;
-  /* Dark Brown */
-  --text-secondary: #8C6B45;
-  /* Lighter Brown (Readable) */
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: #FFCE99;
-  /* Peach Border */
-  --accent-primary: #FF9644;
-  /* Orange */
+  --bg-primary: #FDFBF7;
+  /* Cream / Off-White */
+  --bg-secondary: #EEE6D8;
+  /* Beige / Tan */
+  --text-primary: #1A1A1A;
+  /* Dark Grey / Black */
+  --text-secondary: #4A4A4A;
+  /* Medium Grey */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(26, 26, 26, 0.1);
+  /* Subtle dark border */
+  --accent-primary: #FF8800;
+  /* Vivid Orange */
   --accent-teal: #14b8a6;
   /* Preserved for success states */
 }
