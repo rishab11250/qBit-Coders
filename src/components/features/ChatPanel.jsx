@@ -108,6 +108,13 @@ const ChatPanel = ({ isOpen, onClose }) => {
                                     </p>
                                 </div>
                             </div>
+                            <button
+                                onClick={onClose}
+                                className="p-2 hover:bg-white/5 rounded-lg text-secondary hover:text-primary transition-all duration-200"
+                                aria-label="Close chat"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
 
                         {/* Messages Area */}
@@ -135,7 +142,7 @@ const ChatPanel = ({ isOpen, onClose }) => {
                                         <div className={`
                                         max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed
                                         ${msg.role === 'user'
-                                                ? 'bg-[var(--accent-primary)] text-[var(--text-primary)] rounded-tr-sm'
+                                                ? 'bg-[var(--accent-primary)] text-[var(--text-on-accent)] rounded-tr-sm'
                                                 : 'glass-card text-primary rounded-tl-sm border-primary/5'}
                                     `}>
                                             {msg.content}
@@ -174,7 +181,7 @@ const ChatPanel = ({ isOpen, onClose }) => {
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || isChatLoading}
-                                    className="absolute right-2 p-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--text-primary)] rounded-lg transition-all disabled:opacity-50"
+                                    className="absolute right-2 p-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--text-on-accent)] rounded-lg transition-all disabled:opacity-50"
                                 >
                                     {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                 </button>

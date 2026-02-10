@@ -38,6 +38,8 @@
   /* Amber (Focus/Highlight) */
   --accent-rose: #f43f5e;
   /* Rose (Alerts) */
+  --text-on-accent: #000000;
+  /* Text on accent color */
 }
 
 body[data-theme='light'] {
@@ -52,6 +54,7 @@ body[data-theme='light'] {
 
   --accent-primary: #6366F1;
   /* Indigo 500 – ties into the violet brand */
+  --text-on-accent: #FFFFFF;
 
   /* ──── Dreamy Cloud Background ──── */
   background-color: #E8F0FE;

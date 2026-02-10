@@ -172,7 +172,11 @@ const ConceptGraph = ({ concepts }) => {
             <g
                 onMouseEnter={() => setHoveredNode(nodeId)}
                 onMouseLeave={() => setHoveredNode(null)}
-                style={{ cursor: "pointer" }}
+                style={{
+                    cursor: "pointer",
+                    transition: 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    transform: isHovered ? 'translateY(-5px)' : 'translateY(0)'
+                }}
             >
                 {/* Gradient Definition */}
                 <defs>
@@ -181,7 +185,7 @@ const ConceptGraph = ({ concepts }) => {
                         <stop offset="100%" stopColor={style.bgGradient[1]} />
                     </linearGradient>
                     <filter id={filterId}>
-                        <feDropShadow dx="0" dy="2" stdDeviation={isHovered ? "6" : "3"} floodColor={style.glowColor} floodOpacity={isHovered ? "0.6" : "0.3"} />
+                        <feDropShadow dx="0" dy={isHovered ? "8" : "2"} stdDeviation={isHovered ? "6" : "3"} floodColor={style.glowColor} floodOpacity={isHovered ? "0.4" : "0.3"} />
                     </filter>
                 </defs>
 
@@ -214,8 +218,6 @@ const ConceptGraph = ({ concepts }) => {
                     onClick={toggleNode}
                     style={{
                         transition: 'all 0.3s ease',
-                        transform: isHovered ? 'scale(1.06)' : 'scale(1)',
-                        transformOrigin: 'center center',
                     }}
                 />
 
