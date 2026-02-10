@@ -167,6 +167,10 @@ const InputHub = ({ onGenerate }) => {
 
     return (
         <div className="relative overflow-hidden w-full h-full min-h-[80vh] flex items-center justify-center p-4">
+            {/* Ambient Background Glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none -z-0" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none -z-0" />
+
             {/* Main Container */}
             <div className="relative max-w-5xl mx-auto w-full z-10">
 
@@ -431,12 +435,17 @@ const InputHub = ({ onGenerate }) => {
                             <Button
                                 variant="primary"
                                 size="lg"
-                                className="w-full sm:w-auto min-w-[200px] text-lg shadow-xl hover:shadow-2xl hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 bg-gradient-to-r from-violet-600 to-indigo-600 border border-white/20"
+                                className="w-full sm:w-auto min-w-[200px] text-lg font-bold text-white shadow-2xl hover:shadow-[0_0_30px_rgba(56,189,248,0.4)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 border border-white/20 relative overflow-hidden group"
                                 onClick={handleMainGenerate}
                                 disabled={!isReady() || isLoading}
                                 isLoading={isLoading}
                             >
-                                Generate Study Plan <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                    Generate Study Plan
+                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                </span>
+                                {/* Shimmer Effect */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover:animate-shimmer" />
                             </Button>
                         </div>
                     </div>
