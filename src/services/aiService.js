@@ -7,77 +7,105 @@ const BASE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const getSettings = () => useStudyStore.getState().settings;
 
 /**
+ * API Key Pool: supports multiple comma-separated keys in .env
+ * Format: VITE_GEMINI_API_KEY=key1,key2,key3
+ */
+const API_KEYS = (import.meta.env.VITE_GEMINI_API_KEY || '')
+  .split(',')
+  .map(k => k.trim())
+  .filter(Boolean);
+
+let currentKeyIndex = 0;
+
+/** Gets the next API key in rotation */
+const getNextApiKey = () => {
+  if (API_KEYS.length === 0) throw new Error("No API Keys configured. Add VITE_GEMINI_API_KEY to your .env file.");
+  const key = API_KEYS[currentKeyIndex % API_KEYS.length];
+  currentKeyIndex++;
+  return key;
+};
+
+/** Resets key rotation back to the first key */
+const resetKeyRotation = () => { currentKeyIndex = 0; };
+
+/**
  * Models to try if the primary one is rate-limited.
  * Order matters: prefer newer/faster, then older/stable.
  */
-const FALLBACK_MODELS = ['gemini-2.0-flash-lite-preview-02-05', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro'];
 
 /** Builds the API URL dynamically based on the selected model */
 const getApiUrl = (model = null) => {
-  const selectedModel = model || getSettings().model || 'gemini-2.0-flash-lite-preview-02-05';
+  const selectedModel = model || getSettings().model || 'gemini-2.5-flash';
   return `${BASE_API_URL}/${selectedModel}:generateContent`;
 };
 
 /**
- * Executes a Gemini API request with automatic model fallback on 429 errors.
+ * Executes a Gemini API request with:
+ * 1. API Key rotation (tries all keys before giving up)
+ * 2. Model fallback on 429 errors
  */
 async function executeGeminiRequest(payload) {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error("API Key Missing");
+  if (API_KEYS.length === 0) throw new Error("No API Keys configured.");
 
-  const preferredModel = getSettings().model || 'gemini-2.0-flash-lite-preview-02-05';
+  const preferredModel = getSettings().model || 'gemini-2.5-flash';
 
   // Create a list of models to try: [Preferred, ...Fallbacks]
-  // Filter out duplicates in case preferred is already in fallback list
   const modelsToTry = [
     preferredModel,
     ...FALLBACK_MODELS.filter(m => m !== preferredModel)
   ];
 
   let lastError = null;
+  resetKeyRotation();
 
   for (const model of modelsToTry) {
-    try {
-      const url = `${getApiUrl(model)}?key=${apiKey}`;
-      // Use existing fetchWithRetry, but with fewer internal retries since we rotate models
-      const response = await fetchWithRetry(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }, 1, 1000); // Less aggressive internal retry, fail fast to switch model
+    // For each model, try ALL available API keys
+    for (let keyAttempt = 0; keyAttempt < API_KEYS.length; keyAttempt++) {
+      try {
+        const apiKey = getNextApiKey();
+        const url = `${getApiUrl(model)}?key=${apiKey}`;
 
-      if (!response.ok) {
-        // If it's a 429/503, throw specifically to trigger continue
-        if (response.status === 429 || response.status === 503) {
-          // [NEW] Update Store Status
-          const retryAfter = response.headers.get('Retry-After');
-          const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
-          useStudyStore.getState().updateModelStatus(model, 'limited', waitTime);
+        const response = await fetchWithRetry(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }, 1, 1000);
 
-          throw new Error(`RateLimit_${response.status}`);
+        if (!response.ok) {
+          if (response.status === 429 || response.status === 503) {
+            const retryAfter = response.headers.get('Retry-After');
+            const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+            useStudyStore.getState().updateModelStatus(model, 'limited', waitTime);
+
+            console.warn(`⚠️ Key #${((currentKeyIndex - 1) % API_KEYS.length) + 1} rate limited on ${model}. Trying next key...`);
+            continue; // Try next key
+          }
+          const errText = await response.text();
+          throw new Error(`API Error: ${response.status} - ${errText}`);
         }
-        const errText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errText}`);
-      }
 
-      // Success! Mark as available
-      useStudyStore.getState().updateModelStatus(model, 'available');
-      return response; // Success!
+        // Success!
+        useStudyStore.getState().updateModelStatus(model, 'available');
+        return response;
 
-    } catch (error) {
-      lastError = error;
-      const isRateLimit = error.message.includes('RateLimit') || error.message.includes('429') || error.message.includes('503');
+      } catch (error) {
+        lastError = error;
+        const isRateLimit = error.message.includes('RateLimit') || error.message.includes('429') || error.message.includes('503');
 
-      if (isRateLimit) {
-        console.warn(`Model ${model} rate limited/busy. Switching to fallback...`);
-        continue; // Try next model
-      } else {
-        throw error; // Other errors (400, auth) should fail immediately
+        if (isRateLimit) {
+          continue; // Try next key for this model
+        } else {
+          throw error; // Other errors fail immediately
+        }
       }
     }
+    // All keys exhausted for this model, try next model
+    console.warn(`⚠️ All ${API_KEYS.length} keys exhausted for ${model}. Switching model...`);
+    resetKeyRotation();
   }
 
-  throw lastError || new Error("All models exhausted.");
+  throw lastError || new Error("All models and API keys exhausted.");
 }
 
 /**
@@ -173,39 +201,54 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
   const systemPrompt = `
     You are an expert AI Study Coach and Curriculum Designer.
-    Your goal is to process the provided study material into a structured mastery plan.
+    Your goal is to process the provided study material into a highly structured, deep, and engaging mastery plan.
 
     **Configuration:**
-    - Difficulty Level: ${difficulty} (Adjust vocabulary and concept depth accordingly)
+    - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
     - Quiz Question Count: ${quizCount}
 
     **Required Output Format (JSON ONLY):**
     {
-      "summary": "High-level executive summary (3-4 sentences). Then, a bulleted list of 5-7 key takeaways.",
-      "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
+      "summary": "Start with a 'Feynman Technique' explanation (simple, intuitive 2-sentence summary). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis and critical implications.",
+      "topics": ["Topic 1 (Foundation)", "Topic 2 (Core Mechanism)", "Topic 3 (Advanced Application)", "Topic 4 (Future/Edge Cases)"],
       "concepts": [
         { 
           "name": "Main Concept", 
-          "related": ["Sub-concept 1", "Sub-concept 2", "Application A"] 
+          "related": ["Prerequisite Concept", "Sub-component", "Real-world Example"] 
         }
       ],
       "quiz": [
         { 
-          "question": "Clear, specific question?", 
-          "answer": "Correct answer with brief explanation why.", 
-          "topic": "Topic tag" 
+          "question": "Scenario-based or conceptual question?", 
+          "answer": "Correct answer with a *concise* explanation of WHY it is correct.", 
+          "topic": "Topic tag",
+          "type": "Conceptual" // or "Application", "Fact", "Analysis"
         }
       ]
     }
 
-    **Instructions for Quality:**
-    1. **Summary:** Do not just regurgitate. Synthesize the "Big Idea" first, then break down the details.
-    2. **Concept Graph:** Focus on relationships. "Related" terms should be sub-components, examples, or prerequisites of the "Main Concept". Avoid generic terms like "Definition" or "Importance".
-    3. **Quiz:** 
+    **Instructions for Excellence:**
+    1. **Summary (The "Hook"):** 
+       - Do not just summarize. *Synthesize*. 
+       - Explain *why* this matters. Connect the dots between isolated facts.
+       - Use the 'Feynman Technique': If you can't explain it simply, you don't understand it.
+
+    2. **Concept Graph (The "Map"):** 
+       - Avoid generic links like "Definition".
+       - Focus on *Structural* relationships: "Part of", "Caused by", "Enables", "Contrast with".
+       - Ensure a mix of high-level nodes and specific examples.
+
+    3. **Quiz (The "Test"):** 
        - Generate exactly ${quizCount} questions.
-       - Questions must strictly match the '${difficulty}' level.
-       - ${difficulty === 'Hard' ? 'Focus on application, analysis, and edge cases.' : difficulty === 'Medium' ? 'Mix conceptual understanding with basic application.' : 'Focus on definitions and basic recall.'}
-       - VARY the topics. Do not ask 5 questions about the same paragraph.
+       - **DIVERSITY IS CRITICAL**:
+         - 30% **Fact Recall**: "What is X?"
+         - 40% **Conceptual**: "Why does X happen when Y?"
+         - 30% **Application/Scenario**: "Given situation Z, what is the best approach?"
+       - **Difficulty Adjustment**:
+         - '${difficulty}' == 'Hard': Focus on edge cases, trade-offs, and multi-step reasoning. Distractors should be plausible common misconceptions.
+         - '${difficulty}' == 'Medium': Balance theory and practice.
+         - '${difficulty}' == 'Easy': Focus on core definitions and clear examples.
+       - **Do not** ask multiple questions about the same specific sentence. Spread them across the entire content.
 
     **Constraint:** Return ONLY the raw JSON. No markdown formatting (no \`\`\`json wrappers).
   `;

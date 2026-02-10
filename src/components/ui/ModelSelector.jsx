@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Star, Brain, ChevronDown, Check, Clock, AlertCircle } from 'lucide-react';
+import { Zap, Star, Brain, Sparkles, ChevronDown, Check, Clock, AlertCircle } from 'lucide-react';
 import useStudyStore from '../../store/useStudyStore';
 
 const ModelSelector = () => {
@@ -24,14 +24,12 @@ const ModelSelector = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             const newTimers = {};
-            let hasActiveTimers = false;
 
             Object.entries(modelStatus).forEach(([modelId, status]) => {
                 if (status.status === 'limited' && status.availableAt) {
                     const remaining = Math.max(0, Math.ceil((status.availableAt - Date.now()) / 1000));
                     if (remaining > 0) {
                         newTimers[modelId] = remaining;
-                        hasActiveTimers = true;
                     }
                 }
             });
@@ -44,31 +42,31 @@ const ModelSelector = () => {
 
     const models = [
         {
-            id: 'gemini-2.0-flash-lite-preview-02-05',
-            name: 'Gemini 2.0 Flash Lite',
-            desc: 'Fastest & Efficient',
+            id: 'gemini-2.5-flash',
+            name: 'Gemini 2.5 Flash',
+            desc: 'Fast & Balanced',
             icon: Zap,
             color: 'text-emerald-400'
         },
         {
-            id: 'gemini-1.5-flash',
-            name: 'Gemini 1.5 Flash',
-            desc: 'Balanced & Reliable',
+            id: 'gemini-2.0-flash',
+            name: 'Gemini 2.0 Flash',
+            desc: 'Stable & Reliable',
             icon: Star,
             color: 'text-violet-400'
         },
         {
-            id: 'gemini-1.5-pro',
-            name: 'Gemini 1.5 Pro',
+            id: 'gemini-2.5-pro',
+            name: 'Gemini 2.5 Pro',
             desc: 'Smartest (Complex Tasks)',
             icon: Brain,
             color: 'text-fuchsia-400'
         },
         {
-            id: 'gemini-2.0-flash-exp',
-            name: 'Gemini 2.0 Flash (Exp)',
-            desc: 'Next Gen Preview',
-            icon: Zap,
+            id: 'gemini-2.0-flash-001',
+            name: 'Gemini 2.0 Flash 001',
+            desc: 'Pinned Stable Version',
+            icon: Sparkles,
             color: 'text-yellow-400'
         }
     ];

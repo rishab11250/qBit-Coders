@@ -39,6 +39,10 @@ const InputHub = ({ onGenerate }) => {
         setLoading(true);
         setProcessingStatus('Processing input...');
 
+        // [FIX] Clear previous content to prevent stale results
+        setProcessedContent(null);
+        setExtractedText('');
+
         try {
             console.log("📄 Processing input...");
             let result = null;

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+// Valid Gemini models as of 2026 (verified via ListModels API)
+const VALID_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-001'];
+const DEFAULT_MODEL = 'gemini-2.5-flash';
+
 const useStudyStore = create(
     persist(
         (set, get) => ({
@@ -39,7 +43,7 @@ const useStudyStore = create(
 
             // Settings State
             settings: {
-                model: 'gemini-2.5-flash-lite',
+                model: DEFAULT_MODEL,
                 difficulty: 'Medium',
                 quizCount: 5,
                 theme: 'dark', // Default theme
@@ -90,8 +94,29 @@ const useStudyStore = create(
 
             setSchedule: (schedule) => set({ studySchedule: schedule }),
 
-            updateSettings: (newSettings) => set((state) => ({
-                settings: { ...state.settings, ...newSettings }
+            updateSettings: (newSettings) => set((state) => {
+                // Validate model if being updated
+                const updatedModel = newSettings.model || state.settings.model;
+                const validModel = VALID_MODELS.includes(updatedModel) ? updatedModel : DEFAULT_MODEL;
+
+                return {
+                    settings: {
+                        ...state.settings,
+                        ...newSettings,
+                        model: validModel
+                    }
+                };
+            }),
+
+            // [NEW] Update Model Availability Status
+            updateModelStatus: (modelId, status, retryAfterMs = 0) => set((state) => ({
+                modelStatus: {
+                    ...state.modelStatus,
+                    [modelId]: {
+                        status,
+                        availableAt: status === 'limited' ? Date.now() + retryAfterMs : null
+                    }
+                }
             })),
 
             reset: () => set({
@@ -135,17 +160,21 @@ const useStudyStore = create(
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
-            version: 2, // [NEW] Increment version to force migration
+            version: 4, // [NEW] Bump version to force migration
             migrate: (persistedState, version) => {
-                if (version < 2) {
-                    // Reset settings to default if coming from older version
+                if (version < 4) {
+                    // Validate and fix model if invalid
+                    const currentModel = persistedState?.settings?.model;
+                    const validModel = VALID_MODELS.includes(currentModel) ? currentModel : DEFAULT_MODEL;
+
                     return {
                         ...persistedState,
                         settings: {
-                            model: 'gemini-2.5-flash-lite',
-                            difficulty: 'Intermediate',
-                            quizCount: 5,
-                            theme: 'dark'
+                            ...persistedState?.settings,
+                            model: validModel,
+                            difficulty: persistedState?.settings?.difficulty || 'Intermediate',
+                            quizCount: persistedState?.settings?.quizCount || 5,
+                            theme: persistedState?.settings?.theme || 'dark'
                         }
                     };
                 }
@@ -155,4 +184,22 @@ const useStudyStore = create(
     )
 );
 
+// Runtime validation on initialization
+const validateSettings = () => {
+    const state = useStudyStore.getState();
+    if (!VALID_MODELS.includes(state.settings.model)) {
+        console.warn(`⚠️ Invalid model "${state.settings.model}" detected. Resetting to ${DEFAULT_MODEL}`);
+        useStudyStore.setState({
+            settings: {
+                ...state.settings,
+                model: DEFAULT_MODEL
+            }
+        });
+    }
+};
+
+// Run validation after store initialization
+setTimeout(validateSettings, 0);
+
 export default useStudyStore;
+
