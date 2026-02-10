@@ -19,6 +19,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [filterMode, setFilterMode] = useState('all'); // 'all' | 'weak'
     const [selectedCount, setSelectedCount] = useState(5); // Default to 5 questions
+    const [quizTotal, setQuizTotal] = useState(5); // Track the total for the CURRENT active/finished quiz
     const [isGenerating, setIsGenerating] = useState(false);
     const timerRef = useRef(null);
     const answeredRef = useRef({});
@@ -50,14 +51,12 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     // Filter questions based on mode
     const activeQuizData = useMemo(() => {
         if (filterMode === 'weak' && allWeakTopics.length > 0) {
-            // Loose matching: checks if question topic contains any weak topic or vice versa
             const filtered = quizData.filter(q =>
                 q.topic && allWeakTopics.some(wt =>
                     wt.toLowerCase().includes(q.topic.toLowerCase()) ||
                     q.topic.toLowerCase().includes(wt.toLowerCase())
                 )
             );
-            // If filtering results in 0 questions, fall back to all questions (safety net)
             return filtered.length > 0 ? filtered : quizData;
         }
         return quizData;
@@ -65,8 +64,10 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
 
     // Slice based on selected count
     const finalQuizData = useMemo(() => {
-        return activeQuizData.slice(0, selectedCount);
-    }, [activeQuizData, selectedCount]);
+        // Use quizTotal when active/results to Lock the set, selectedCount for start screen
+        const limit = mode === 'start' ? selectedCount : quizTotal;
+        return activeQuizData.slice(0, limit);
+    }, [activeQuizData, selectedCount, quizTotal, mode]);
 
     const total = finalQuizData.length;
     const currentQ = finalQuizData[currentIndex];
@@ -92,7 +93,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
         }
 
         return () => clearInterval(timerRef.current);
-    }, [isTimerActive, timeLeft, currentIndex]); // Dependencies need to trigger effect updates
+    }, [isTimerActive, timeLeft, currentIndex]);
 
     const handleTimeout = () => {
         setShowAnswer(true);
@@ -107,16 +108,16 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     };
 
     const startQuiz = (selectedMode = 'all') => {
+        setQuizTotal(selectedCount); // LOCK the total for this session
         setFilterMode(selectedMode);
         setMode('active');
         setCurrentIndex(0);
         setScore(0);
         setAnswers({});
-        answeredRef.current = {};
         setShowAnswer(false);
         setTimeLeft(TIMER_DURATION);
         setIsTimerActive(true);
-        setIsTimerActive(true);
+        answeredRef.current = {};
     };
 
     const handleRegenerate = async () => {
@@ -124,13 +125,11 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
 
         try {
             setIsGenerating(true);
-            // Re-generate content using the stored text. 
-            // Since we updated aiService to default to 20 questions, this will fetch a larger set.
             const result = await generateStudyContent('text', processedContent.text);
 
             if (result && result.quiz && result.quiz.length > 0) {
                 setQuiz(result.quiz);
-                setSelectedCount(Math.min(20, result.quiz.length)); // Auto-select max
+                setSelectedCount(Math.min(20, result.quiz.length));
             }
         } catch (error) {
             console.error("Failed to regenerate quiz:", error);
@@ -140,7 +139,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     };
 
     const handleReveal = () => {
-        setIsTimerActive(false); // Stop timer immediately
+        setIsTimerActive(false);
         setShowAnswer(true);
     };
 
@@ -148,7 +147,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
         if (answeredRef.current[currentIndex]) return;
         answeredRef.current[currentIndex] = true;
 
-        setIsTimerActive(false); // Ensure timer stops
+        setIsTimerActive(false);
         setAnswers(prev => ({
             ...prev,
             [currentIndex]: { isCorrect, topic: currentQ?.topic }
@@ -169,7 +168,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
             setCurrentIndex(nextIdx);
             setShowAnswer(false);
             setTimeLeft(TIMER_DURATION);
-            setIsTimerActive(true); // Restart timer for next question
+            setIsTimerActive(true);
         }
     };
 
@@ -197,7 +196,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
 
         addQuizResult({
             score: finalScore,
-            total,
+            total: quizTotal, // Use quizTotal for consistent history
             weakTopics,
             topicScores
         });
@@ -240,7 +239,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                     onChange={(e) => setSelectedCount(Number(e.target.value))}
                                     className="appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-bold py-2 pl-4 pr-8 rounded-lg border border-primary/20 focus:outline-none focus:border-violet-500 cursor-pointer transition-colors"
                                 >
-                                    {/* Always show 5, 10, 15, 20 options as requested */}
                                     {[5, 10, 15, 20].map(n => (
                                         <option key={n} value={n} className="bg-gray-900 text-white">{n}</option>
                                     ))}
@@ -250,7 +248,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 </div>
                             </div>
                         </div>
-                        {/* Show Generate button if we don't have enough questions for the SELECTION (or full set) */}
+
                         {(quizData.length < selectedCount || quizData.length < 20) && (processedContent?.text || useStudyStore.getState().extractedText) && (
                             <button
                                 onClick={handleRegenerate}
@@ -309,7 +307,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                         exit={{ opacity: 0, x: -40 }}
                         transition={{ duration: 0.35, ease: 'easeOut' }}
                     >
-                        {/* Filter badge */}
                         {filterMode === 'weak' && (
                             <div className="mb-4 flex items-center gap-2 text-xs text-rose-400">
                                 <Filter size={12} />
@@ -317,7 +314,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                             </div>
                         )}
 
-                        {/* Top Bar: Progress + Score + Timer */}
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex-1 mr-4">
                                 <div className="flex justify-between text-xs text-secondary mb-1.5">
@@ -334,7 +330,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 </div>
                             </div>
 
-                            {/* Timer Ring */}
                             <div className="relative w-12 h-12 flex-shrink-0">
                                 <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
                                     <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
@@ -354,7 +349,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                             </div>
                         </div>
 
-                        {/* Question */}
                         <div className="mb-6">
                             <div className="flex items-start gap-3 mb-1">
                                 <span className="text-xs font-semibold text-secondary uppercase tracking-wider px-2 py-1 bg-primary/10 rounded whitespace-nowrap mt-0.5">
@@ -369,7 +363,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                             <h4 className="text-xl font-semibold text-primary leading-relaxed mt-3">{currentQ.question}</h4>
                         </div>
 
-                        {/* Answer Area */}
                         {!showAnswer ? (
                             <div className="space-y-3">
                                 <button
@@ -390,7 +383,6 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                     <p className="text-primary font-medium leading-relaxed">{currentQ.answer}</p>
                                 </div>
 
-                                {/* Self-Grade Buttons */}
                                 {!answeredRef.current[currentIndex] ? (
                                     <div className="flex items-center justify-between gap-4 pt-2">
                                         <p className="text-sm text-secondary font-medium">Did you know the answer?</p>
@@ -446,28 +438,47 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
                                 <motion.circle
                                     cx="50" cy="50" r="44" fill="none"
-                                    stroke={score / total >= 0.7 ? '#14b8a6' : score / total >= 0.4 ? '#f59e0b' : '#f43f5e'}
+                                    stroke={score / quizTotal >= 0.7 ? '#14b8a6' : score / quizTotal >= 0.4 ? '#f59e0b' : '#f43f5e'}
                                     strokeWidth="6"
                                     strokeLinecap="round"
                                     strokeDasharray={2 * Math.PI * 44}
                                     initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
-                                    animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - score / total) }}
+                                    animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - score / quizTotal) }}
                                     transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-3xl font-black text-primary">{score}</span>
-                                <span className="text-xs text-secondary">/ {total}</span>
+                                <span className="text-xs text-secondary">/ {quizTotal}</span>
                             </div>
                         </div>
 
                         <h3 className="text-2xl font-bold text-primary mb-1">
-                            {score / total >= 0.8 ? '🎉 Excellent!' : score / total >= 0.5 ? '👍 Good Effort!' : '💪 Keep Studying!'}
+                            {score / quizTotal >= 0.8 ? '🎉 Excellent!' : score / quizTotal >= 0.5 ? '👍 Good Effort!' : '💪 Keep Studying!'}
                         </h3>
                         <p className="text-secondary mb-6">
-                            You scored {score} out of {total} ({Math.round((score / total) * 100)}%)
+                            You scored {score} out of {quizTotal} ({Math.round((score / quizTotal) * 100)}%)
                             {filterMode === 'weak' && <span className="text-rose-400 ml-1">(Weak Areas)</span>}
                         </p>
+
+                        {/* Question Count Selector (Results Screen) */}
+                        <div className="flex items-center justify-center gap-3 mb-8">
+                            <span className="text-sm text-secondary font-medium">Next Quiz Questions:</span>
+                            <div className="relative">
+                                <select
+                                    value={selectedCount}
+                                    onChange={(e) => setSelectedCount(Number(e.target.value))}
+                                    className="appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-bold py-2 pl-4 pr-8 rounded-lg border border-primary/20 focus:outline-none focus:border-violet-500 cursor-pointer transition-colors"
+                                >
+                                    {[5, 10, 15, 20].map(n => (
+                                        <option key={n} value={n} className="bg-gray-900 text-white">{n}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
+                                    <ChevronDown size={14} />
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                             <button
@@ -477,10 +488,10 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 <RotateCcw size={16} className="inline mr-2" /> Retake Full Quiz
                             </button>
                         </div>
-                    </motion.div>
+                    </motion.div >
                 )}
-            </AnimatePresence>
-        </div>
+            </AnimatePresence >
+        </div >
     );
 };
 
