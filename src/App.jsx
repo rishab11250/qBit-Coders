@@ -103,7 +103,7 @@ const App = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
 
-        <main className="flex-1 pt-24">
+        <main className={`flex-1 ${currentStep !== 'input' ? 'pt-20' : ''}`}>
           {currentStep === 'input' ? (
             <InputHub onGenerate={handleGenerate} />
           ) : (
