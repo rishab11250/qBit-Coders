@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
     Upload, FileText, Youtube, CheckCircle2, ArrowRight, Sparkles
 } from 'lucide-react';
+import { motion } from 'framer-motion'; // Using Framer Motion for animations
 import useStudyStore from '../store/useStudyStore';
 import { processStudyFile } from '../utils/filePipeline';
 import Button from './ui/Button';
@@ -23,12 +24,6 @@ const InputHub = ({ onGenerate }) => {
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Validation
-            // Although processStudyFile handles non-pdfs, the UI says "PDF files"
-            // We can keep the UI restriction or relax it. Remote had specific check.
-            // We'll trust the pipeline but maybe keep the warning if strict.
-            // Let's allow what processStudyFile allows, but for now the UI prompts for PDF.
-
             setLocalFile(file);
             setPdfFile(file);
             setLoading(true);
@@ -44,8 +39,6 @@ const InputHub = ({ onGenerate }) => {
                 }
 
                 console.log(`✂️ Chunks created: ${chunks.length}`);
-
-                // Store the processed text (joined chunks) for the AI
                 setExtractedText(chunks.join('\n'));
 
             } catch (err) {
@@ -59,42 +52,66 @@ const InputHub = ({ onGenerate }) => {
     };
 
     const isReady = () => {
-        if (activeTab === 'pdf') return !!localFile && !isLoading && !error; // simplified check
+        if (activeTab === 'pdf') return !!localFile && !isLoading && !error;
         if (activeTab === 'notes') return notes.length > 20;
         if (activeTab === 'video') return videoUrl.includes('youtube');
         return false;
     };
 
-    return (
-        <div className="relative overflow-hidden bg-white">
-            {/* Background decoration */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50 via-white to-purple-50 opacity-80" />
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50" />
-            <div className="absolute top-1/2 -left-24 w-72 h-72 bg-purple-100 rounded-full blur-3xl opacity-50" />
+    const tabVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    };
 
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-medium mb-6 animate-fade-in">
-                        <Sparkles size={14} />
+    return (
+        <div className="relative overflow-hidden w-full h-full min-h-[80vh] flex items-center justify-center p-4">
+            {/* Main Container */}
+            <div className="relative max-w-5xl mx-auto w-full z-10">
+
+                {/* Hero Text */}
+                <div className="text-center mb-12">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-violet-500/30 text-violet-200 text-sm font-medium mb-6"
+                    >
+                        <Sparkles size={14} className="text-violet-400" />
                         <span>Powered by Gemini 1.5 Pro</span>
-                    </div>
-                    <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 animate-slide-up">
+                    </motion.div>
+
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6"
+                    >
                         Master any subject <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                            in minutes, not hours.
+                        <span className="text-gradient">
+                            in minutes.
                         </span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-slate-600 mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto"
+                    >
                         Upload your course materials, lecture notes, or YouTube videos.
-                        Our AI will create a personalized study plan, quizzes, and summaries instantly.
-                    </p>
+                        Our AI creates personalized study plans instantly.
+                    </motion.p>
                 </div>
 
-                {/* Input Interface */}
-                <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-slide-up" style={{ animationDelay: '0.2s' }}>
-
+                {/* Glass Input Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.6 }}
+                    className="glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-violet-900/20"
+                >
                     {/* Tabs */}
-                    <div className="flex border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex border-b border-white/10 bg-black/20">
                         {[
                             { id: 'pdf', icon: Upload, label: 'Upload PDF' },
                             { id: 'notes', icon: FileText, label: 'Paste Notes' },
@@ -103,31 +120,46 @@ const InputHub = ({ onGenerate }) => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-medium transition-colors border-b-2
-                  ${activeTab === tab.id
-                                        ? 'border-indigo-600 text-indigo-600 bg-white'
-                                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                                className={`flex-1 flex items-center justify-center gap-2 py-5 text-sm font-medium transition-all relative overflow-hidden
+                                    ${activeTab === tab.id
+                                        ? 'text-white bg-white/10'
+                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
-                                <tab.icon size={18} />
-                                {tab.label}
+                                <tab.icon size={18} className={activeTab === tab.id ? 'text-violet-400' : ''} />
+                                <span className={activeTab === tab.id ? 'text-violet-100' : ''}>{tab.label}</span>
+                                {activeTab === tab.id && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                                    />
+                                )}
                             </button>
                         ))}
                     </div>
 
-                    {/* Content */}
-                    <div className="p-8 min-h-[320px] bg-white relative">
+                    {/* Content Area */}
+                    <div className="p-8 md:p-12 min-h-[350px] relative">
                         {isLoading && (
-                            <div className="absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex items-center justify-center">
-                                <Loader text="Processing file..." size="lg" />
+                            <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-md flex items-center justify-center rounded-b-3xl">
+                                <Loader text="Analyzing content..." size="lg" />
                             </div>
                         )}
 
                         {error && <ErrorMessage message={error} onDismiss={() => setError(null)} className="mb-6" />}
 
+                        {/* PDF TAB */}
                         {activeTab === 'pdf' && (
-                            <div className={`border-2 border-dashed rounded-xl p-10 text-center transition-all h-full flex flex-col items-center justify-center
-                ${localFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'}`}>
+                            <motion.div
+                                variants={tabVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all h-full flex flex-col items-center justify-center group
+                                    ${localFile
+                                        ? 'border-emerald-500/50 bg-emerald-500/10'
+                                        : 'border-white/10 hover:border-violet-500/50 hover:bg-white/5'
+                                    }`}
+                            >
                                 <input
                                     type="file"
                                     accept=".pdf"
@@ -139,63 +171,77 @@ const InputHub = ({ onGenerate }) => {
                                 <label htmlFor="pdf-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center">
                                     {localFile ? (
                                         <>
-                                            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
-                                                <CheckCircle2 size={32} />
+                                            <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-4 neon-shadow">
+                                                <CheckCircle2 size={40} />
                                             </div>
-                                            <p className="text-lg font-medium text-emerald-900">{localFile.name}</p>
-                                            <p className="text-sm text-emerald-600 mt-1">{(localFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</p>
+                                            <p className="text-xl font-medium text-white">{localFile.name}</p>
+                                            <p className="text-sm text-emerald-400 mt-2">{(localFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</p>
                                         </>
                                     ) : (
                                         <>
-                                            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                <Upload size={32} />
+                                            <div className="w-20 h-20 bg-white/5 text-violet-400 rounded-full flex items-center justify-center mb-6 border border-white/10 group-hover:scale-110 group-hover:bg-violet-500/20 group-hover:text-white transition-all duration-300">
+                                                <Upload size={36} />
                                             </div>
-                                            <p className="text-lg font-medium text-slate-900">Click to upload or drag and drop</p>
-                                            <p className="text-sm text-slate-500 mt-2">PDF files up to 20MB</p>
+                                            <p className="text-xl font-medium text-white mb-2">Drop your PDF here</p>
+                                            <p className="text-sm text-gray-400">or click to browse functionality</p>
                                         </>
                                     )}
                                 </label>
-                            </div>
+                            </motion.div>
                         )}
 
+                        {/* NOTES TAB */}
                         {activeTab === 'notes' && (
-                            <textarea
-                                className="w-full h-64 p-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none text-slate-700 placeholder:text-slate-400 text-lg leading-relaxed"
-                                placeholder="Paste your lecture notes, snippets, or raw text here..."
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                            />
+                            <motion.div
+                                variants={tabVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="h-full"
+                            >
+                                <textarea
+                                    className="w-full h-72 p-6 rounded-2xl glass-input text-lg leading-relaxed resize-none"
+                                    placeholder="Paste your lecture notes, snippets, or raw text here..."
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                />
+                            </motion.div>
                         )}
 
+                        {/* VIDEO TAB */}
                         {activeTab === 'video' && (
-                            <div className="flex flex-col items-center justify-center h-full py-10">
+                            <motion.div
+                                variants={tabVariants}
+                                initial="hidden"
+                                animate="visible"
+                                className="flex flex-col items-center justify-center h-full py-12"
+                            >
                                 <div className="w-full max-w-lg">
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <Youtube className="text-slate-400" />
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                            <Youtube className="text-gray-500 group-focus-within:text-red-500 transition-colors" />
                                         </div>
                                         <input
                                             type="text"
-                                            className="w-full pl-12 pr-4 py-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-lg"
+                                            className="w-full pl-14 pr-6 py-5 rounded-2xl glass-input text-lg"
                                             placeholder="Paste YouTube URL here..."
                                             value={videoUrl}
                                             onChange={(e) => setVideoUrl(e.target.value)}
                                         />
                                     </div>
-                                    <p className="text-center text-slate-500 text-sm mt-4">
+                                    <p className="text-center text-gray-400 text-sm mt-6">
                                         Supports public YouTube videos with captions.
                                     </p>
                                 </div>
-                            </div>
+                            </motion.div>
                         )}
                     </div>
 
                     {/* Footer Action */}
-                    <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <div className="p-6 md:p-8 border-t border-white/10 bg-white/5 flex justify-end">
                         <Button
-                            variant="primary"
+                            variant="primary" // Assuming Button component handles the classNames we pass or updated locally
                             size="lg"
-                            className="w-full sm:w-auto min-w-[200px] shadow-indigo-200 shadow-xl"
+                            className="w-full sm:w-auto min-w-[200px] btn-primary text-lg"
                             onClick={onGenerate}
                             disabled={!isReady() || isLoading}
                             isLoading={isLoading}
@@ -203,7 +249,7 @@ const InputHub = ({ onGenerate }) => {
                             Generate Study Plan <ArrowRight size={20} className="ml-2" />
                         </Button>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </div>
     );
