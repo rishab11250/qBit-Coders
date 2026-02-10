@@ -1,5 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker?url";
+import { callGemini } from './aiService'; // [NEW] Import for YouTube processing
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -13,30 +14,50 @@ export async function processInput(input) {
     try {
         let sourceType = 'text';
         let rawText = '';
+        let chunks = [];
 
         // 1. Determine input type and extract raw text
         if (input instanceof File) {
             if (input.type === 'application/pdf') {
                 sourceType = 'pdf';
-                rawText = await extractTextFromPDF(input);
+                // [CHANGED] optimized page-by-page processing
+                const result = await extractTextFromPDF(input);
+                rawText = result.rawText;
+                chunks = result.chunks;
+
+                // Return early since we already have chunks and cleaned text
+                return {
+                    sourceType,
+                    rawText,
+                    chunks
+                };
             } else {
-                // Determine if it's text-based enough to read
-                // (For safety, we'll try reading as text)
-                sourceType = 'text'; // Treating plain text file as text
+                sourceType = 'text';
                 rawText = await input.text();
             }
         } else if (typeof input === 'string') {
-            sourceType = 'text';
-            rawText = input;
+            // Check for YouTube URL
+            if (input.includes('youtube.com') || input.includes('youtu.be')) {
+                console.log("🎥 Processing YouTube transcript...");
+                const systemPrompt = "You are an expert transcriber. Create a clean, timestamped study transcript with sections for this lecture video.";
+                const userPrompt = `Video URL: ${input}`;
+
+                // Call Gemini to simulate transcript generation
+                rawText = await callGemini(systemPrompt, userPrompt);
+                sourceType = 'youtube';
+            } else {
+                sourceType = 'text';
+                rawText = input;
+            }
         } else {
             throw new Error("Unsupported input type");
         }
 
-        // 2. Clean and Normalize
+        // 2. Clean and Normalize (for non-PDF inputs)
         const cleanedText = cleanText(rawText);
 
-        // 3. Chunk
-        const chunks = chunkText(cleanedText);
+        // 3. Chunk (for non-PDF inputs)
+        chunks = chunkText(cleanedText);
 
         return {
             sourceType,
@@ -52,27 +73,43 @@ export async function processInput(input) {
 
 /**
  * Extracts text from a PDF file using pdfjs-dist.
+ * Optimized to chunk page-by-page to prevent UI freezing.
  * @param {File} file 
- * @returns {Promise<string>}
+ * @returns {Promise<{rawText: string, chunks: string[]}>}
  */
 async function extractTextFromPDF(file) {
     try {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
         let fullText = '';
+        const allChunks = [];
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
 
-            // Join items with space, but preserve some structure if needed
+            // Join items with space
             const pageText = textContent.items.map(item => item.str).join(' ');
 
-            // Add a discrete separator or just content
-            fullText += pageText + '\n\n';
+            // [NEW] Process this page immediately
+            // 1. Clean
+            const cleanedPage = cleanText(pageText);
+
+            // 2. Chunk (if page has content)
+            if (cleanedPage.length > 0) {
+                const pageChunks = chunkText(cleanedPage);
+                allChunks.push(...pageChunks);
+
+                // 3. Accumulate full text (optional, but good for reference)
+                fullText += cleanedPage + '\n\n';
+            }
         }
 
-        return fullText;
+        return {
+            rawText: fullText,
+            chunks: allChunks
+        };
     } catch (error) {
         console.error("PDF Extraction Internal Error:", error);
         throw new Error("Failed to parse PDF content.");
@@ -100,6 +137,12 @@ function cleanText(text) {
  */
 function chunkText(text, chunkSize = 1200, overlap = 200) {
     if (!text) return [];
+
+    // Safety check for parameters
+    if (chunkSize <= 0) chunkSize = 1200;
+    if (overlap >= chunkSize) overlap = chunkSize - 1;
+    if (overlap < 0) overlap = 0;
+
     if (text.length <= chunkSize) return [text];
 
     const chunks = [];

@@ -130,6 +130,22 @@ const useStudyStore = create(
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
+            version: 2, // [NEW] Increment version to force migration
+            migrate: (persistedState, version) => {
+                if (version < 2) {
+                    // Reset settings to default if coming from older version
+                    return {
+                        ...persistedState,
+                        settings: {
+                            model: 'gemini-2.5-flash-lite',
+                            difficulty: 'Intermediate',
+                            quizCount: 5,
+                            theme: 'dark'
+                        }
+                    };
+                }
+                return persistedState;
+            },
         }
     )
 );
