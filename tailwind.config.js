@@ -7,15 +7,7 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Map to CSS variables for theme support
-                primary: 'var(--text-primary)',
-                secondary: 'var(--text-secondary)',
-                accent: {
-                    DEFAULT: 'var(--accent-primary)',
-                    teal: 'var(--accent-teal)',
-                    amber: 'var(--accent-amber)',
-                },
-                surface: 'var(--bg-secondary)',
+                // Removed: Colors are now defined in src/index.css via @theme for full v4 support
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
