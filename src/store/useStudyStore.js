@@ -32,6 +32,9 @@ const useStudyStore = create(
             // Quiz History (persisted)
             quizHistory: [], // { date, score, total, weakTopics: [], topicScores: {} }
 
+            // [NEW] Study Plan History (persisted)
+            planHistory: [], // { id, date, title, summary, topics, concepts, quiz, inputType }
+
             // Study Stats (persisted)
             studyStats: {
                 totalPlansGenerated: 0,
@@ -113,6 +116,43 @@ const useStudyStore = create(
             // Quiz History Actions
             addQuizResult: (result) => set((state) => ({
                 quizHistory: [...state.quizHistory, { ...result, date: new Date().toISOString() }]
+            })),
+
+            // [NEW] Plan History Actions
+            savePlanToHistory: (planData) => set((state) => {
+                const newPlan = {
+                    id: crypto.randomUUID(),
+                    date: new Date().toISOString(),
+                    title: planData.topics?.[0] || "Untitled Study Plan",
+                    summary: planData.summary,
+                    topics: planData.topics,
+                    concepts: planData.concepts,
+                    quiz: planData.quiz,
+                    inputType: state.processedContent?.type || 'text'
+                };
+                // Keep last 10 plans
+                const updatedHistory = [newPlan, ...state.planHistory].slice(0, 10);
+                return { planHistory: updatedHistory };
+            }),
+
+            loadPlanFromHistory: (id) => {
+                const state = get();
+                const plan = state.planHistory.find(p => p.id === id);
+                if (plan) {
+                    set({
+                        summary: plan.summary,
+                        topics: plan.topics,
+                        concepts: plan.concepts,
+                        quiz: plan.quiz,
+                        currentStep: 'dashboard',
+                        isLoading: false,
+                        error: null
+                    });
+                }
+            },
+
+            deletePlanFromHistory: (id) => set((state) => ({
+                planHistory: state.planHistory.filter(p => p.id !== id)
             })),
 
             // Study Stats Actions
@@ -207,13 +247,14 @@ const useStudyStore = create(
                 quiz: state.quiz,
                 weakAreas: state.weakAreas,
                 quizHistory: state.quizHistory,
+                planHistory: state.planHistory, // [NEW] Persist plan history
                 studyStats: state.studyStats,
                 studySchedule: state.studySchedule, // Persist schedule
                 chatHistory: state.chatHistory, // Persist chat
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
-            version: 5, // Bump version for quizHistory + studyStats
+            version: 6, // Bump version to 6 for planHistory
             migrate: (persistedState, version) => {
                 if (version < 4) {
                     const currentModel = persistedState?.settings?.model;

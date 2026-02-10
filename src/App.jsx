@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import useStudyStore from './store/useStudyStore';
 import Navbar from './components/layout/Navbar';
 import InputHub from './components/InputHub';
@@ -6,10 +7,13 @@ import DashboardLayout from './components/features/DashboardLayout';
 import Background3D from './components/ui/Background3D';
 import PomodoroTimer from './components/features/PomodoroTimer';
 import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
+import HistorySidebar from './components/features/HistorySidebar';
 
 const App = () => {
   const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated, isChatOpen } = useStudyStore();
   const [isSharedPlan, setIsSharedPlan] = useState(false);
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true); // [NEW] Lifted state
 
   // Apply theme
   useEffect(() => {
@@ -112,6 +116,7 @@ const App = () => {
         };
         setStudyData(safeResult);
         incrementPlansGenerated();
+        useStudyStore.getState().savePlanToHistory(safeResult); // [NEW] Save to history
       } else {
         throw new Error("AI returned empty result.");
       }
@@ -135,7 +140,12 @@ const App = () => {
 
         <main className={`flex-1 ${currentStep !== 'input' && !isChatOpen ? 'pt-20' : ''}`}>
           {currentStep === 'input' ? (
-            <InputHub onGenerate={handleGenerate} />
+            <>
+              <HistorySidebar isOpen={isHistoryOpen} onToggle={setIsHistoryOpen} />
+              <div className="w-full">
+                <InputHub onGenerate={handleGenerate} />
+              </div>
+            </>
           ) : (
             <DashboardLayout />
           )}

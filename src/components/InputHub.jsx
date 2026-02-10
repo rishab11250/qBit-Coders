@@ -155,6 +155,8 @@ const InputHub = ({ onGenerate }) => {
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
+
+
     const isReady = () => {
         if (activeTab === 'pdf') return localFiles.length > 0 && !isLoading && !error;
         if (activeTab === 'images') return imageFiles.length > 0 && !isLoading;
@@ -448,8 +450,12 @@ const InputHub = ({ onGenerate }) => {
                         </div>
                     </div>
                 </motion.div>
+
+
+
             </div>
         </div>
+
     );
 };
 
