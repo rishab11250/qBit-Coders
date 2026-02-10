@@ -87,6 +87,7 @@ const useStudyStore = create(
                 summary: data.summary || '',
                 topics: data.topics || [],
                 concepts: data.concepts || [],
+                studyMaterial: data.detailed_notes || [], // [FIX] Save detailed notes
                 quiz: data.quiz || [],
                 currentStep: 'dashboard',
                 isLoading: false,
@@ -220,6 +221,7 @@ const useStudyStore = create(
                 summary: '',
                 topics: [],
                 concepts: [],
+                studyMaterial: [], // [NEW] Deep dive notes
                 quiz: [],
                 chatHistory: [],
                 studySchedule: null,
@@ -244,6 +246,7 @@ const useStudyStore = create(
                 summary: state.summary,
                 topics: state.topics,
                 concepts: state.concepts,
+                studyMaterial: state.studyMaterial, // [NEW] Persist deep dive notes
                 quiz: state.quiz,
                 weakAreas: state.weakAreas,
                 quizHistory: state.quizHistory,

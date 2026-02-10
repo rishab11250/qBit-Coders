@@ -7,13 +7,15 @@ import {
     HelpCircle,
     Calendar,
     BarChart3,
-    ArrowRight
+    ArrowRight,
+    BookOpen // [NEW] Import icon
 } from 'lucide-react';
 
 const SidebarNav = ({ activeSection, scrollToSection }) => {
     const navItems = [
         { id: 'summary', label: 'Summary', icon: FileText, color: 'text-violet-400' },
         { id: 'knowledge', label: 'Knowledge Map', icon: Share2, color: 'text-cyan-400' },
+        { id: 'material', label: 'Deep Dive', icon: BookOpen, color: 'text-indigo-400' }, // [NEW] Add Link
         { id: 'focus', label: 'Focus Areas', icon: Target, color: 'text-rose-400' },
         { id: 'quiz', label: 'Quiz', icon: HelpCircle, color: 'text-amber-400' },
         { id: 'timeline', label: 'Timeline', icon: Calendar, color: 'text-emerald-400' },

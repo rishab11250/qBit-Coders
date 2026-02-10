@@ -10,10 +10,11 @@ import ConceptGraph from '../ConceptGraph';
 import ChatPanel from './ChatPanel';
 import StudySchedule from './StudySchedule';
 import ProgressDashboard from './ProgressDashboard';
+import StudyMaterial from './StudyMaterial'; // [NEW] Import StudyMaterial
 import SidebarNav from '../layout/SidebarNav';
 
 const DashboardLayout = () => {
-    const { summary, concepts, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen } = useStudyStore();
+    const { summary, concepts, studyMaterial, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen } = useStudyStore(); // [NEW] Extract studyMaterial
     const [shareToast, setShareToast] = useState(false);
     const containerRef = useRef(null);
     const [activeSection, setActiveSection] = useState('summary');
@@ -257,6 +258,13 @@ const DashboardLayout = () => {
                                 </div>
                             </div>
                         </section>
+
+                        {/* Study Material Section [NEW] */}
+                        {studyMaterial && studyMaterial.length > 0 && (
+                            <section id="material" className="gsap-stagger scroll-mt-24" data-tour="material-section">
+                                <StudyMaterial material={studyMaterial} />
+                            </section>
+                        )}
 
                         {/* Focus Areas Section */}
                         {weakAreas.length > 0 && (

@@ -220,6 +220,14 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
           "related": ["Prerequisite Concept", "Sub-component", "Real-world Example"] 
         }
       ],
+      "detailed_notes": [
+        {
+          "topic": "Topic Name",
+          "content": "Comprehensive learning material in Markdown format. Use headers, bullet points, bold text, and code blocks if relevant.",
+          "key_points": ["Key takeaway 1", "Key takeaway 2"],
+          "real_world_example": "A concrete analogy or application."
+        }
+      ],
       "quiz": [
         { 
           "question": "Scenario-based or conceptual question?", 

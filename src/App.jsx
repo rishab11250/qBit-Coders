@@ -117,6 +117,7 @@ const App = () => {
           summary: result.summary || "No summary available.",
           topics: result.topics || [],
           concepts: result.concepts || [],
+          detailed_notes: result.detailed_notes || [], // [FIX] Pass detailed notes to store
           quiz: result.quiz || []
         };
         setStudyData(safeResult);
