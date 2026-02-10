@@ -15,6 +15,7 @@ export async function processInput(input) {
         let sourceType = 'text';
         let rawText = '';
         let chunks = [];
+        let metadata = {};
 
         // 1. Determine input type and extract raw text
         if (input instanceof File) {
@@ -25,11 +26,20 @@ export async function processInput(input) {
                 rawText = result.rawText;
                 chunks = result.chunks;
 
+                // Calculate metadata
+                const wordCount = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
+                const estimatedStudyTimeMinutes = Math.ceil(wordCount / 200);
+                const chunkCount = chunks.length;
+
+                metadata = { wordCount, estimatedStudyTimeMinutes, chunkCount };
+                console.log("📊 Metadata:", metadata);
+
                 // Return early since we already have chunks and cleaned text
                 return {
                     sourceType,
                     rawText,
-                    chunks
+                    chunks,
+                    metadata
                 };
             } else {
                 sourceType = 'text';
@@ -66,6 +76,14 @@ Focus on capturing *definitions*, *causal relationships*, and *examples* given i
                 // but let's try the direct prompt first.
 
                 rawText = await callGemini(systemPrompt, userPrompt);
+
+                const failureKeywords = [
+                    "cannot access", "unable to access", "i cannot watch", "text-based ai",
+                    "don't have access", "no transcript", "no subtitles", "caption unavailable"
+                ];
+                if (failureKeywords.some(k => rawText.toLowerCase().includes(k)) || rawText.length < 50) {
+                    throw new Error("Unable to process video: Missing captions or access restricted. Please paste the transcript/notes manually.");
+                }
                 sourceType = 'video';
             } else {
                 sourceType = 'text';
@@ -81,10 +99,19 @@ Focus on capturing *definitions*, *causal relationships*, and *examples* given i
         // 3. Chunk (for non-PDF inputs)
         chunks = chunkText(cleanedText);
 
+        // Calculate metadata
+        const wordCount = cleanedText.trim() ? cleanedText.trim().split(/\s+/).length : 0;
+        const estimatedStudyTimeMinutes = Math.ceil(wordCount / 200);
+        const chunkCount = chunks.length;
+
+        metadata = { wordCount, estimatedStudyTimeMinutes, chunkCount };
+        console.log("📊 Metadata:", metadata);
+
         return {
             sourceType,
             rawText: cleanedText,
-            chunks
+            chunks,
+            metadata
         };
 
     } catch (error) {
