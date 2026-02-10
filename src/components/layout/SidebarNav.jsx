@@ -8,13 +8,14 @@ import {
     Calendar,
     BarChart3,
     ArrowRight,
-    BookOpen // [NEW] Import icon
+    BookOpen, // [NEW] Import icon
+    Network // [NEW] Better icon for Knowledge Map
 } from 'lucide-react';
 
 const SidebarNav = ({ activeSection, scrollToSection }) => {
     const navItems = [
         { id: 'summary', label: 'Summary', icon: FileText, color: 'text-violet-400' },
-        { id: 'knowledge', label: 'Knowledge Map', icon: Share2, color: 'text-cyan-400' },
+        { id: 'knowledge', label: 'Knowledge Map', icon: Network, color: 'text-cyan-400' },
         { id: 'material', label: 'Deep Dive', icon: BookOpen, color: 'text-indigo-400' }, // [NEW] Add Link
         { id: 'focus', label: 'Focus Areas', icon: Target, color: 'text-rose-400' },
         { id: 'quiz', label: 'Quiz', icon: HelpCircle, color: 'text-amber-400' },

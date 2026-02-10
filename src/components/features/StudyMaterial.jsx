@@ -30,8 +30,8 @@ const StudyMaterial = ({ material }) => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             className={`group rounded-2xl border transition-all duration-300 overflow-hidden ${isExpanded
-                                    ? 'bg-indigo-500/[0.03] border-indigo-500/30 shadow-lg shadow-indigo-500/5'
-                                    : 'bg-[var(--bg-secondary)] border-white/5 hover:border-white/10'
+                                ? 'bg-indigo-500/[0.03] border-indigo-500/30 shadow-lg shadow-indigo-500/5'
+                                : 'bg-[var(--bg-secondary)] border-white/5 hover:border-white/10'
                                 }`}
                         >
                             <button
@@ -76,7 +76,7 @@ const StudyMaterial = ({ material }) => {
                                                         code: ({ node, inline, ...props }) =>
                                                             inline
                                                                 ? <code className="bg-white/10 px-1.5 py-0.5 rounded text-indigo-200 text-xs font-mono" {...props} />
-                                                                : <div className="bg-black/30 rounded-lg p-3 my-2 border border-white/5 overflow-x-auto"><code className="text-xs font-mono text-gray-300" {...props} /></div>
+                                                                : <code className="block bg-black/30 rounded-lg p-3 my-2 border border-white/5 overflow-x-auto text-xs font-mono text-gray-300" {...props} />
                                                     }}
                                                 >
                                                     {item.content}

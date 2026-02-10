@@ -57,6 +57,7 @@ const useStudyStore = create(
             error: null,
             currentStep: 'input',
             isChatOpen: false,
+            isQuizLoading: false, // [NEW] Quiz Loading State
 
             // Settings State
             settings: {
@@ -91,8 +92,17 @@ const useStudyStore = create(
                 quiz: data.quiz || [],
                 currentStep: 'dashboard',
                 isLoading: false,
-                error: null
+                error: null,
+                isQuizLoading: false // Reset quiz loading on new data
             }),
+
+            setQuizLoading: (loading) => set({ isQuizLoading: loading }),
+
+            // Helper to update JUST the quiz (Stage 2)
+            updateQuizData: (quizData) => set((state) => ({
+                quiz: quizData,
+                isQuizLoading: false
+            })),
 
             addWeakArea: (topic) => {
                 const state = get();
@@ -128,6 +138,7 @@ const useStudyStore = create(
                     summary: planData.summary,
                     topics: planData.topics,
                     concepts: planData.concepts,
+                    studyMaterial: planData.detailed_notes || planData.studyMaterial || [], // [FIX] Save notes
                     quiz: planData.quiz,
                     inputType: state.processedContent?.type || 'text'
                 };
@@ -144,6 +155,7 @@ const useStudyStore = create(
                         summary: plan.summary,
                         topics: plan.topics,
                         concepts: plan.concepts,
+                        studyMaterial: plan.studyMaterial || [], // [FIX] Restore notes
                         quiz: plan.quiz,
                         currentStep: 'dashboard',
                         isLoading: false,

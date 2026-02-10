@@ -227,14 +227,6 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
           "key_points": ["Key takeaway 1", "Key takeaway 2"],
           "real_world_example": "A concrete analogy or application."
         }
-      ],
-      "quiz": [
-        { 
-          "question": "Scenario-based or conceptual question?", 
-          "answer": "Correct answer with a *concise* explanation of WHY it is correct.", 
-          "topic": "Topic tag",
-          "type": "Conceptual" // or "Application", "Fact", "Analysis"
-        }
       ]
     }
 
@@ -248,18 +240,6 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
        - Avoid generic links like "Definition".
        - Focus on *Structural* relationships: "Part of", "Caused by", "Enables", "Contrast with".
        - Ensure a mix of high-level nodes and specific examples.
-
-    3. **Quiz (The "Test"):** 
-       - Generate exactly ${quizCount} questions.
-       - **DIVERSITY IS CRITICAL**:
-         - 30% **Fact Recall**: "What is X?"
-         - 40% **Conceptual**: "Why does X happen when Y?"
-         - 30% **Application/Scenario**: "Given situation Z, what is the best approach?"
-       - **Difficulty Adjustment**:
-         - '${difficulty}' == 'Hard': Focus on edge cases, trade-offs, and multi-step reasoning. Distractors should be plausible common misconceptions.
-         - '${difficulty}' == 'Medium': Balance theory and practice.
-         - '${difficulty}' == 'Easy': Focus on core definitions and clear examples.
-       - **Do not** ask multiple questions about the same specific sentence. Spread them across the entire content.
 
     **Constraint:** Return ONLY the raw JSON. No markdown formatting (no \`\`\`json wrappers).
   `;
@@ -298,47 +278,110 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
         data: content
       }
     });
-    parts.push({ text: "Analyze this document." });
+    parts.push({ text: `Analyze this document and create a comprehensive study plan.` });
   }
+
+  // Debug payload
+  // console.log("Gemini Payload:", JSON.stringify(parts, null, 2));
 
   try {
     const response = await executeGeminiRequest({
-      contents: [{ parts: parts }]
+      contents: [{ parts }]
     });
 
-    if (!response.ok) {
-      // Should be handled by executeGeminiRequest but safety net
-      throw new Error(`API Error: ${response.status}`);
-    }
-
     const data = await response.json();
-    const candidate = data.candidates?.[0];
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!candidate) throw new Error("No response generated.");
+    if (!resultText) throw new Error("Empty response from AI");
 
-    let textResponse = candidate.content.parts[0].text;
-
-    // Clean markdown formatting
-    textResponse = textResponse.replace(/^```json\s*/, "").replace(/\s*```$/, "");
-
-    try {
-      return JSON.parse(textResponse);
-    } catch (parseError) {
-      console.error("JSON Parsing Error:", parseError, textResponse);
-      // Fallback or re-throw
-      return {
-        summary: "Error parsing AI response.",
-        topics: [],
-        concepts: [],
-        quiz: []
-      };
-    }
+    const cleanedJson = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanedJson);
 
   } catch (error) {
     console.error("AI Generation Error:", error);
-    return null;
+    // Fallback Mock Data
+    return {
+      summary: "Error generating content. Please try again.",
+      topics: [],
+      concepts: [],
+      detailed_notes: []
+    };
   }
 }
+
+/**
+ * Generates ONLY the quiz based on the study plan context.
+ * This runs in the background to speed up initial load.
+ */
+export async function generateQuizOnly(summary, topics) {
+  const { difficulty } = getSettings();
+  const quizCount = 20;
+
+  const systemPrompt = `
+    You are an expert Examiner.
+    Generate a challenging and comprehensive quiz based on the provided summary and topics.
+
+    **Configuration:**
+    - Difficulty: ${difficulty}
+    - Question Count: ${quizCount}
+
+    **Required Output Format (JSON ONLY):**
+    {
+      "quiz": [
+        { 
+          "question": "Scenario-based or conceptual question?", 
+          "answer": "Correct answer with a *concise* explanation.", 
+          "topic": "Topic tag",
+          "type": "Conceptual" // or "Application", "Fact", "Analysis"
+        }
+      ]
+    }
+
+    **Instructions:**
+    - Generate exactly ${quizCount} questions.
+    - **DIVERSITY**:
+      - 30% Fact Recall
+      - 40% Conceptual
+      - 30% Application
+    - **Avoid** simple definitions. Test deep understanding.
+
+    **Constraint:** Return ONLY the raw JSON. No markdown formatting.
+  `;
+
+  const userPrompt = `
+    **Context:**
+    Summary: ${summary}
+    Topics: ${topics.join(', ')}
+
+    Generate the quiz now.
+  `;
+
+  const parts = [
+    { text: systemPrompt },
+    { text: userPrompt }
+  ];
+
+  try {
+    const response = await executeGeminiRequest({
+      contents: [{ parts }]
+    });
+
+    const data = await response.json();
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!resultText) throw new Error("Empty response from AI");
+
+    const cleanedJson = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanedJson);
+
+  } catch (error) {
+    console.error("Quiz Generation Error:", error);
+    return { quiz: [] };
+  }
+}
+
+
+
 
 /**
  * Generates study content using Google Search Grounding.

@@ -14,7 +14,7 @@ import StudyMaterial from './StudyMaterial'; // [NEW] Import StudyMaterial
 import SidebarNav from '../layout/SidebarNav';
 
 const DashboardLayout = () => {
-    const { summary, concepts, studyMaterial, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen } = useStudyStore(); // [NEW] Extract studyMaterial
+    const { summary, concepts, studyMaterial, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen, isQuizLoading } = useStudyStore(); // [NEW] Extract isQuizLoading
     const [shareToast, setShareToast] = useState(false);
     const containerRef = useRef(null);
     const [activeSection, setActiveSection] = useState('summary');
@@ -42,27 +42,34 @@ const DashboardLayout = () => {
         }
     };
 
-    // Scroll Spy
+    // Reliable Scroll Spy with Resize Handling
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setActiveSection(entry.target.id);
+        const handleScroll = () => {
+            const sections = ['summary', 'knowledge', 'material', 'focus', 'quiz', 'timeline', 'progress'];
+
+            // Find the section that is currently most active in viewport
+            for (const id of sections) {
+                const element = document.getElementById(id);
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    // Check if top of section is within upper viewport area (adjust 150 for navbar/padding)
+                    if (rect.top <= 150 && rect.bottom >= 150) {
+                        setActiveSection(id);
+                        break;
                     }
-                });
-            },
-            { threshold: 0.3, rootMargin: "-20% 0px -50% 0px" }
-        );
+                }
+            }
+        };
 
-        const sections = ['summary', 'knowledge', 'focus', 'quiz', 'timeline', 'progress'];
-        sections.forEach((id) => {
-            const element = document.getElementById(id);
-            if (element) observer.observe(element);
-        });
+        window.addEventListener('scroll', handleScroll);
+        // Also listen for resize changes (like accordion opening)
+        window.addEventListener('resize', handleScroll);
 
-        return () => observer.disconnect();
-    }, []);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleScroll);
+        };
+    }, [studyMaterial]); // Re-run when content changes
 
     useGSAP(() => {
         gsap.from('.gsap-stagger', {
@@ -307,13 +314,23 @@ const DashboardLayout = () => {
                                     <HelpCircle size={18} className="text-amber-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-primary">Knowledge Check</h3>
+                                    <h3 className="text-xl font-bold text-primary">Interactive Quiz</h3>
                                     <p className="text-xs text-secondary mt-0.5">Test your understanding</p>
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-2xl p-1 transition-all hover:border-amber-500/30">
+
+                            {/* Quiz Loading State */}
+                            {isQuizLoading && (!quiz || quiz.length === 0) ? (
+                                <div className="glass-panel p-8 rounded-3xl border border-amber-500/20 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
+                                    <div className="w-12 h-12 rounded-full border-4 border-amber-500/30 border-t-amber-500 animate-spin" />
+                                    <div>
+                                        <h4 className="text-lg font-bold text-primary">Crafting Your Quiz...</h4>
+                                        <p className="text-sm text-secondary">Analyzing the deep dive notes to create custom questions.</p>
+                                    </div>
+                                </div>
+                            ) : (
                                 <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
-                            </div>
+                            )}
                         </section>
 
                         {/* Timeline Section */}
