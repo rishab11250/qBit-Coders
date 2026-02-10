@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Upload, FileText, Youtube, CheckCircle2, ArrowRight, Sparkles, Image as ImageIcon, X
+    Upload, FileText, Youtube, CheckCircle2, ArrowRight, Sparkles, Image as ImageIcon, X, Settings
 } from 'lucide-react';
 import { motion } from 'framer-motion'; // Using Framer Motion for animations
 import useStudyStore from '../store/useStudyStore';
