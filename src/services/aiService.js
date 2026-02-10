@@ -318,7 +318,7 @@ export async function generateQuizOnly(summary, topics, questionCount = 10, weak
     }
 
     **Instructions:**
-    - Generate exactly ${questionCount} questions.
+    - YOU MUST generate EXACTLY ${questionCount} questions. Not ${questionCount - 1}, not ${questionCount + 1}. EXACTLY ${questionCount}.
     - **DIVERSITY**:
       - 30% Fact Recall
       - 40% Conceptual
@@ -333,7 +333,7 @@ export async function generateQuizOnly(summary, topics, questionCount = 10, weak
     Summary: ${summary}
     Topics: ${topics.join(', ')}
 
-    Generate the quiz now.
+    Generate EXACTLY ${questionCount} quiz questions now.
   `;
 
   const parts = [
@@ -352,7 +352,24 @@ export async function generateQuizOnly(summary, topics, questionCount = 10, weak
     if (!resultText) throw new Error("Empty response from AI");
 
     const cleanedJson = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleanedJson);
+    const parsed = JSON.parse(cleanedJson);
+
+    // Ensure we have the exact number of questions
+    if (parsed.quiz && parsed.quiz.length < questionCount) {
+      console.warn(`AI returned ${parsed.quiz.length}/${questionCount} questions. Padding with duplicates.`);
+      // Duplicate existing questions to fill the gap
+      while (parsed.quiz.length < questionCount && parsed.quiz.length > 0) {
+        const randomQ = parsed.quiz[Math.floor(Math.random() * parsed.quiz.length)];
+        parsed.quiz.push({ ...randomQ });
+      }
+    }
+
+    // Trim if AI gave too many
+    if (parsed.quiz && parsed.quiz.length > questionCount) {
+      parsed.quiz = parsed.quiz.slice(0, questionCount);
+    }
+
+    return parsed;
 
   } catch (error) {
     console.error("Quiz Generation Error:", error);

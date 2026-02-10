@@ -521,23 +521,12 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 You correctly answered <strong>{score}</strong> out of <strong>{quizTotal}</strong> questions.
                             </p>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => startQuiz('all')}
-                                    className="py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
-                                >
-                                    <RotateCcw size={18} /> Retake Quiz
-                                </button>
-
-                                {filterMode !== 'weak' && relevantWeakTopics.length > 0 && (
-                                    <button
-                                        onClick={() => startQuiz('weak')}
-                                        className="py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-rose-400 font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
-                                    >
-                                        <Target size={18} /> Review Weak Areas
-                                    </button>
-                                )}
-                            </div>
+                            <button
+                                onClick={() => setMode('start')}
+                                className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-white font-bold shadow-lg shadow-violet-900/40 hover:shadow-violet-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                            >
+                                <RotateCcw size={18} /> Take Another Quiz
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
