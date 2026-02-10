@@ -134,21 +134,6 @@ const App = () => {
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
 
-        {/* Shared Plan Banner */}
-        {isSharedPlan && currentStep === 'dashboard' && (
-          <div className="bg-violet-500/10 border-b border-violet-500/20 text-center py-2.5 px-4">
-            <p className="text-sm text-violet-300 font-medium">
-              📤 You're viewing a shared study plan
-              <button
-                onClick={() => { setIsSharedPlan(false); useStudyStore.getState().reset(); }}
-                className="ml-3 text-xs underline text-violet-400 hover:text-violet-300"
-              >
-                Create your own
-              </button>
-            </p>
-          </div>
-        )}
-
         <main className="flex-1 pt-24">
           {currentStep === 'input' ? (
             <InputHub onGenerate={handleGenerate} />
