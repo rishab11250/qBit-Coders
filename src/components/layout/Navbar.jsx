@@ -28,13 +28,6 @@ const Navbar = () => {
             </button>
 
             <div className="flex items-center gap-3 pointer-events-auto">
-                <button
-                    onClick={() => window.dispatchEvent(new Event('start-onboarding'))}
-                    className="p-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/10 backdrop-blur-md transition-all duration-300 text-secondary hover:text-primary cursor-pointer shadow-sm hover:shadow-md"
-                    title="Start Tour"
-                >
-                    <HelpCircle size={20} />
-                </button>
 
                 {/* Theme Toggle */}
                 <button

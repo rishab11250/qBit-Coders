@@ -5,7 +5,6 @@ import InputHub from './components/InputHub';
 import DashboardLayout from './components/features/DashboardLayout';
 import Background3D from './components/ui/Background3D';
 import PomodoroTimer from './components/features/PomodoroTimer';
-import OnboardingTour from './components/features/OnboardingTour';
 import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
 
 const App = () => {
@@ -149,9 +148,6 @@ const App = () => {
 
       {/* Pomodoro Timer (floating, global) */}
       {currentStep === 'dashboard' && <PomodoroTimer />}
-
-      {/* Onboarding Tour (first-time users) */}
-      <OnboardingTour />
     </div>
   );
 };
