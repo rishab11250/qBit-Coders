@@ -59,7 +59,39 @@ const DashboardLayout = () => {
                                     <h3 className="text-2xl font-bold text-primary tracking-tight">Executive Summary</h3>
                                 </div>
                                 <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
-                                    <p>{summary}</p>
+                                    <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
+                                        {/* Handle both String and Object summaries */}
+                                        {typeof summary === 'object' && summary !== null ? (
+                                            <div className="space-y-6">
+                                                {summary.simple_explanation && (
+                                                    <div className="bg-indigo-500/10 p-5 rounded-2xl border border-indigo-500/20">
+                                                        <h4 className="text-lg font-bold text-indigo-300 mb-2 flex items-center gap-2">
+                                                            <span>💡</span> Simple Explanation
+                                                        </h4>
+                                                        <p className="text-indigo-100/90">{summary.simple_explanation}</p>
+                                                    </div>
+                                                )}
+                                                {summary.executive_brief && (
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-primary mb-3 flex items-center gap-2">
+                                                            <span>📋</span> Executive Brief
+                                                        </h4>
+                                                        {Array.isArray(summary.executive_brief) ? (
+                                                            <ul className="space-y-2 list-disc pl-5 marker:text-emerald-500">
+                                                                {summary.executive_brief.map((item, i) => (
+                                                                    <li key={i} className="pl-1">{item}</li>
+                                                                ))}
+                                                            </ul>
+                                                        ) : (
+                                                            <p>{summary.executive_brief}</p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p>{summary}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </section>

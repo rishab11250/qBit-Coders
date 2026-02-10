@@ -209,7 +209,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
     **Required Output Format (JSON ONLY):**
     {
-      "summary": "Start with a 'Feynman Technique' explanation (simple, intuitive 2-sentence summary). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis and critical implications.",
+      "summary": "Start with a 'Simple Explanation' (EL.I5 style, 2 sentences). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis.",
       "topics": ["Topic 1 (Foundation)", "Topic 2 (Core Mechanism)", "Topic 3 (Advanced Application)", "Topic 4 (Future/Edge Cases)"],
       "concepts": [
         { 
@@ -231,7 +231,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
     1. **Summary (The "Hook"):** 
        - Do not just summarize. *Synthesize*. 
        - Explain *why* this matters. Connect the dots between isolated facts.
-       - Use the 'Feynman Technique': If you can't explain it simply, you don't understand it.
+       - **Style**: Explain complex ideas simply (like Feynman). If you can't explain it simply, you don't understand it.
 
     2. **Concept Graph (The "Map"):** 
        - Avoid generic links like "Definition".
