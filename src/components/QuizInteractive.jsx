@@ -240,25 +240,25 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                     onChange={(e) => setSelectedCount(Number(e.target.value))}
                                     className="appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-bold py-2 pl-4 pr-8 rounded-lg border border-primary/20 focus:outline-none focus:border-violet-500 cursor-pointer transition-colors"
                                 >
-                                    {[5, 10, 15, 20].filter(n => n <= quizData.length).map(n => (
+                                    {/* Always show 5, 10, 15, 20 options as requested */}
+                                    {[5, 10, 15, 20].map(n => (
                                         <option key={n} value={n} className="bg-gray-900 text-white">{n}</option>
                                     ))}
-                                    {/* Ensure at least one option if length < 5 (e.g. 3 questions available) */}
-                                    {quizData.length < 5 && <option value={quizData.length}>{quizData.length}</option>}
                                 </select>
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
                                     <ChevronDown size={14} />
                                 </div>
                             </div>
                         </div>
-                        {quizData.length < 20 && (processedContent?.text || useStudyStore.getState().extractedText) && (
+                        {/* Show Generate button if we don't have enough questions for the SELECTION (or full set) */}
+                        {(quizData.length < selectedCount || quizData.length < 20) && (processedContent?.text || useStudyStore.getState().extractedText) && (
                             <button
                                 onClick={handleRegenerate}
                                 disabled={isGenerating}
                                 className="group flex items-center justify-center gap-2 mx-auto text-xs font-medium text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 rounded-full border border-violet-500/20 transition-all -mt-6 mb-8 disabled:opacity-50"
                             >
                                 <RefreshCw size={12} className={`transition-transform duration-700 ${isGenerating ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-                                {isGenerating ? 'Generating Questions...' : `Generate Full 20-Question Set`}
+                                {isGenerating ? 'Generating Questions...' : `Generate ${selectedCount > quizData.length ? 'More' : 'Full'} Questions`}
                             </button>
                         )}
 
