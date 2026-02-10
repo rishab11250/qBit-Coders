@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Star, Brain, ChevronDown, Check } from 'lucide-react';
+import { Zap, Star, Brain, ChevronDown, Check, Clock, AlertCircle } from 'lucide-react';
 import useStudyStore from '../../store/useStudyStore';
 
 const ModelSelector = () => {
-    const { settings, updateSettings } = useStudyStore();
+    const { settings, updateSettings, modelStatus } = useStudyStore();
     const [isOpen, setIsOpen] = useState(false);
+    const [timers, setTimers] = useState({});
     const containerRef = useRef(null);
 
     // Close on click outside
@@ -19,27 +20,56 @@ const ModelSelector = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Update countdown timers every second
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const newTimers = {};
+            let hasActiveTimers = false;
+
+            Object.entries(modelStatus).forEach(([modelId, status]) => {
+                if (status.status === 'limited' && status.availableAt) {
+                    const remaining = Math.max(0, Math.ceil((status.availableAt - Date.now()) / 1000));
+                    if (remaining > 0) {
+                        newTimers[modelId] = remaining;
+                        hasActiveTimers = true;
+                    }
+                }
+            });
+
+            setTimers(newTimers);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [modelStatus]);
+
     const models = [
         {
-            id: 'gemini-2.5-flash-lite',
-            name: 'Flash Lite',
-            desc: 'Fast & Efficient',
+            id: 'gemini-2.0-flash-lite-preview-02-05',
+            name: 'Gemini 2.0 Flash Lite',
+            desc: 'Fastest & Efficient',
             icon: Zap,
             color: 'text-emerald-400'
         },
         {
-            id: 'gemini-2.5-flash',
-            name: 'Flash 2.5',
-            desc: 'Balanced',
+            id: 'gemini-1.5-flash',
+            name: 'Gemini 1.5 Flash',
+            desc: 'Balanced & Reliable',
             icon: Star,
             color: 'text-violet-400'
         },
         {
-            id: 'gemini-3-flash',
-            name: 'Flash 3.0',
-            desc: 'Most Capable',
+            id: 'gemini-1.5-pro',
+            name: 'Gemini 1.5 Pro',
+            desc: 'Smartest (Complex Tasks)',
             icon: Brain,
             color: 'text-fuchsia-400'
+        },
+        {
+            id: 'gemini-2.0-flash-exp',
+            name: 'Gemini 2.0 Flash (Exp)',
+            desc: 'Next Gen Preview',
+            icon: Zap,
+            color: 'text-yellow-400'
         }
     ];
 
@@ -68,34 +98,58 @@ const ModelSelector = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-64 origin-top-right rounded-xl glass-panel border border-white/10 shadow-xl overflow-hidden backdrop-blur-xl bg-black/80"
+                        className="absolute right-0 mt-2 w-72 origin-top-right rounded-xl glass-panel border border-white/10 shadow-xl overflow-hidden backdrop-blur-xl bg-black/90"
                     >
-                        <div className="p-2 space-y-1">
+                        <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto custom-scrollbar">
                             {models.map((model) => {
                                 const isSelected = settings.model === model.id;
+                                const isLimited = modelStatus[model.id]?.status === 'limited' && timers[model.id] > 0;
+
                                 return (
                                     <button
                                         key={model.id}
-                                        onClick={() => handleSelect(model.id)}
-                                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all group ${isSelected ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                                        onClick={() => !isLimited && handleSelect(model.id)}
+                                        disabled={isLimited}
+                                        className={`w-full flex items-start gap-3 px-3 py-3 rounded-lg transition-all group relative
+                                            ${isSelected ? 'bg-white/10' : 'hover:bg-white/5'}
+                                            ${isLimited ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                        `}
                                     >
-                                        <div className={`p-2 rounded-lg bg-white/5 ${isSelected ? 'bg-white/10' : ''}`}>
-                                            <model.icon size={16} className={model.color} />
+                                        <div className={`mt-0.5 p-2 rounded-lg bg-white/5 ${isSelected ? 'bg-white/10' : ''}`}>
+                                            {isLimited ? <AlertCircle size={16} className="text-red-400" /> : <model.icon size={16} className={model.color} />}
                                         </div>
+
                                         <div className="text-left flex-1">
-                                            <p className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary group-hover:text-white'}`}>
-                                                {model.name}
-                                            </p>
-                                            <p className="text-xs text-secondary/60">
+                                            <div className="flex justify-between items-center">
+                                                <p className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary group-hover:text-white'}`}>
+                                                    {model.name}
+                                                </p>
+                                                {isLimited && (
+                                                    <span className="text-red-400 text-xs font-mono flex items-center gap-1">
+                                                        <Clock size={10} /> {timers[model.id]}s
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-secondary/60 mt-0.5">
                                                 {model.desc}
                                             </p>
+                                            {isLimited && (
+                                                <p className="text-[10px] text-red-500/80 mt-1">
+                                                    Rate limit hit. Auto-recovering.
+                                                </p>
+                                            )}
                                         </div>
-                                        {isSelected && (
-                                            <Check size={16} className="text-emerald-400" />
+                                        {isSelected && !isLimited && (
+                                            <div className="mt-1">
+                                                <Check size={16} className="text-emerald-400" />
+                                            </div>
                                         )}
                                     </button>
                                 );
                             })}
+                        </div>
+                        <div className="p-2 bg-white/5 border-t border-white/5 text-[10px] text-center text-secondary/40">
+                            Auto-switches if model is busy
                         </div>
                     </motion.div>
                 )}

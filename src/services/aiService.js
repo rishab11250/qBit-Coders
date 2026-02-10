@@ -10,11 +10,11 @@ const getSettings = () => useStudyStore.getState().settings;
  * Models to try if the primary one is rate-limited.
  * Order matters: prefer newer/faster, then older/stable.
  */
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+const FALLBACK_MODELS = ['gemini-2.0-flash-lite-preview-02-05', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
 /** Builds the API URL dynamically based on the selected model */
 const getApiUrl = (model = null) => {
-  const selectedModel = model || getSettings().model || 'gemini-2.5-flash-lite';
+  const selectedModel = model || getSettings().model || 'gemini-2.0-flash-lite-preview-02-05';
   return `${BASE_API_URL}/${selectedModel}:generateContent`;
 };
 
@@ -25,7 +25,7 @@ async function executeGeminiRequest(payload) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("API Key Missing");
 
-  const preferredModel = getSettings().model || 'gemini-2.5-flash-lite';
+  const preferredModel = getSettings().model || 'gemini-2.0-flash-lite-preview-02-05';
 
   // Create a list of models to try: [Preferred, ...Fallbacks]
   // Filter out duplicates in case preferred is already in fallback list
