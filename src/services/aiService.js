@@ -1,6 +1,16 @@
 // GoogleGenerativeAI import removed as we use fetch
+import useStudyStore from '../store/useStudyStore';
 
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
+const BASE_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/** Reads current settings from the Zustand store */
+const getSettings = () => useStudyStore.getState().settings;
+
+/** Builds the API URL dynamically based on the selected model */
+const getApiUrl = () => {
+  const model = getSettings().model || 'gemini-2.5-flash-lite';
+  return `${BASE_API_URL}/${model}:generateContent`;
+};
 
 /**
  * Helper: Encodes a File object to a Base64 string for the API.
@@ -44,13 +54,16 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 
   // Define the JSON structure. 
   // IMPORTANT: We include 'concepts' to support existing DashboardLayout UI.
+  const { difficulty, quizCount } = getSettings();
+
   const systemPrompt = `
     You are an AI Study Coach.
+    Difficulty Level: ${difficulty}
     From the given content:
     - Generate short structured notes (5–8 points)
     - Extract key topics (array)
     - Identify core concepts and their related terms (for concept map)
-    - Generate 5 quiz questions with answers.
+    - Generate exactly ${quizCount} quiz questions with answers at ${difficulty} level.
     
     Return ONLY valid JSON in this format:
     {
@@ -81,7 +94,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
   }
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -150,7 +163,7 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
   parts.push({ text: userPrompt });
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -220,7 +233,7 @@ export async function sendChatMessage(history, newMessage, context) {
     // If we want full PDF chat, we'd need to re-send the inlineData every time or use the File API.
     // Let's stick to text context for the "Logic MVP" as requested.
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -270,7 +283,7 @@ export async function generateSchedule(content, days, hoursPerDay) {
   `;
 
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
