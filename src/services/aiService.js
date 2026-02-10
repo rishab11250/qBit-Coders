@@ -13,6 +13,36 @@ const getApiUrl = () => {
 };
 
 /**
+ * Helper: Retries a fetch operation with exponential backoff.
+ * @param {string} url 
+ * @param {object} options 
+ * @param {number} retries 
+ * @param {number} backoff 
+ */
+async function fetchWithRetry(url, options, retries = 2, backoff = 1000) {
+  try {
+    const response = await fetch(url, options);
+    // 429 = Too Many Requests, 5xx = Server Errors
+    if (!response.ok && (response.status === 429 || response.status >= 500)) {
+      if (retries > 0) {
+        console.warn(`API call failed (${response.status}). Retrying in ${backoff}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoff));
+        // Recursive retry with increased backoff
+        return fetchWithRetry(url, options, retries - 1, backoff * 2);
+      }
+    }
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Network error. Retrying in ${backoff}ms...`, error);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    throw error;
+  }
+}
+
+/**
  * Helper: Encodes a File object to a Base64 string for the API.
  * Kept for backward compatibility if needed by other components.
  */
@@ -111,7 +141,7 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
   }
 
   try {
-    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
+    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -180,7 +210,7 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
   parts.push({ text: userPrompt });
 
   try {
-    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
+    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -216,8 +246,18 @@ export async function sendChatMessage(history, newMessage, context) {
   // 1. Build the system instruction / context
   let contextPrompt = "You are a helpful study tutor. Answer questions based on the provided study material.";
 
-  if (context.extractedText) {
-    contextPrompt += `\n\nStudy Material Context:\n${context.extractedText.substring(0, 30000)}...`; // Limit context size
+  // [Enhanced Context Logic]
+  // Prioritize structured 'processedContent' if available (from Daksh's service)
+  // This allows the AI to see the structure of the document better (chunks, metadata)
+  if (context.processedContent && context.processedContent.text) {
+    const { text, metadata } = context.processedContent;
+    const title = metadata?.title ? `Title: ${metadata.title}\n` : '';
+    // We limit context to ~30k chars to stay safe within Flash Lite limits (which is huge, but good practice)
+    contextPrompt += `\n\nStudy Material Context:\n${title}${text.substring(0, 40000)}...`;
+  }
+  // Fallback to legacy fields
+  else if (context.extractedText) {
+    contextPrompt += `\n\nStudy Material Context:\n${context.extractedText.substring(0, 30000)}...`;
   } else if (context.notes) {
     contextPrompt += `\n\nNotes Context:\n${context.notes}`;
   }
@@ -250,13 +290,13 @@ export async function sendChatMessage(history, newMessage, context) {
     // If we want full PDF chat, we'd need to re-send the inlineData every time or use the File API.
     // Let's stick to text context for the "Logic MVP" as requested.
 
-    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
+    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) throw new Error("Chat Loop Failed");
+    if (!response.ok) throw new Error(`Chat Loop Failed: ${response.status}`);
 
     const data = await response.json();
     const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate an answer.";
@@ -300,7 +340,7 @@ export async function generateSchedule(content, days, hoursPerDay) {
   `;
 
   try {
-    const response = await fetch(`${getApiUrl()}?key=${apiKey}`, {
+    const response = await fetchWithRetry(`${getApiUrl()}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
