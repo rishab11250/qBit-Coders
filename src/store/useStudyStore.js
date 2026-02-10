@@ -39,7 +39,7 @@ const useStudyStore = create(
 
             // Settings State
             settings: {
-                model: 'gemini-2.5-flash-lite',
+                model: 'gemini-2.5-flash',
                 difficulty: 'Medium',
                 quizCount: 5,
                 theme: 'dark', // Default theme
@@ -94,6 +94,17 @@ const useStudyStore = create(
                 settings: { ...state.settings, ...newSettings }
             })),
 
+            // [NEW] Update Model Availability Status
+            updateModelStatus: (modelId, status, retryAfterMs = 0) => set((state) => ({
+                modelStatus: {
+                    ...state.modelStatus,
+                    [modelId]: {
+                        status,
+                        availableAt: status === 'limited' ? Date.now() + retryAfterMs : null
+                    }
+                }
+            })),
+
             reset: () => set({
                 pdfFile: null,
                 extractedText: '',
@@ -135,14 +146,14 @@ const useStudyStore = create(
                 settings: state.settings,
                 currentStep: state.currentStep
             }),
-            version: 2, // [NEW] Increment version to force migration
+            version: 3, // [NEW] Increment version to force migration
             migrate: (persistedState, version) => {
-                if (version < 2) {
+                if (version < 3) {
                     // Reset settings to default if coming from older version
                     return {
                         ...persistedState,
                         settings: {
-                            model: 'gemini-2.5-flash-lite',
+                            model: 'gemini-2.5-flash',
                             difficulty: 'Intermediate',
                             quizCount: 5,
                             theme: 'dark'
