@@ -42,90 +42,83 @@ const DashboardLayout = () => {
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 gap-8">
 
-                    {/* Left Column: Summary, Schedule & Concepts */}
-                    <div className="lg:col-span-12 xl:col-span-8 space-y-8">
+                    {/* Summary Section */}
+                    <section className="gsap-stagger relative overflow-hidden rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                        {/* Summary Section */}
-                        <section className="gsap-stagger relative overflow-hidden rounded-3xl p-8 bg-white/5 border border-white/10 hover:border-white/20 transition-colors group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                        <FileText size={20} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-primary tracking-tight">Executive Summary</h3>
-                                </div>
-                                <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
-                                    <p>{summary}</p>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* Study Schedule Section */}
-                        <section className="gsap-stagger rounded-3xl p-8 bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                    <Calendar size={20} />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-primary tracking-tight">Smart Schedule</h3>
-                                    <p className="text-sm text-secondary">Your personalized timeline</p>
-                                </div>
-                            </div>
-                            <StudySchedule />
-                        </section>
-
-                        {/* Concepts Section */}
-                        <section className="gsap-stagger rounded-3xl p-8 bg-white/5 border border-white/10 hover:border-white/20 transition-colors">
+                        <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                    <Share2 size={20} />
+                                    <FileText size={20} />
                                 </div>
-                                <h3 className="text-2xl font-bold text-primary tracking-tight">Knowledge Graph</h3>
+                                <h3 className="text-2xl font-bold text-primary tracking-tight">Executive Summary</h3>
                             </div>
+                            <div className="prose prose-invert max-w-none text-secondary leading-relaxed text-lg">
+                                <p>{summary}</p>
+                            </div>
+                        </div>
+                    </section>
 
-                            <div className="h-[450px] w-full relative overflow-hidden rounded-2xl border border-white/5 bg-black/20">
-                                <ConceptGraph concepts={concepts} />
+                    {/* Concepts Section */}
+                    <section className="gsap-stagger rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
+                                <Share2 size={20} />
+                            </div>
+                            <h3 className="text-2xl font-bold text-primary tracking-tight">Knowledge Graph</h3>
+                        </div>
+
+                        <div className="h-[450px] w-full relative overflow-hidden rounded-2xl border border-white/5 bg-black/20">
+                            <ConceptGraph concepts={concepts} />
+                        </div>
+                    </section>
+
+                    {/* Weak Areas Section */}
+                    {weakAreas.length > 0 && (
+                        <section
+                            className="gsap-stagger rounded-3xl p-8 border border-red-500/30 bg-red-500/10 backdrop-blur-md"
+                        >
+                            <div className="flex items-center gap-3 mb-4 text-red-400">
+                                <AlertTriangle size={24} />
+                                <h3 className="text-xl font-bold">Focus Areas</h3>
+                            </div>
+                            <p className="text-red-200/80 mb-4">You struggled with these topics. We recommend reviewing them:</p>
+                            <div className="flex flex-wrap gap-3">
+                                {weakAreas.map((area, i) => (
+                                    <span key={i} className="px-4 py-2 bg-red-500/20 text-red-200 font-medium rounded-xl border border-red-500/30">
+                                        {area}
+                                    </span>
+                                ))}
                             </div>
                         </section>
+                    )}
 
-                        {/* Weak Areas Section */}
-                        {weakAreas.length > 0 && (
-                            <section
-                                className="gsap-stagger rounded-3xl p-8 border border-red-500/30 bg-red-500/10 backdrop-blur-md"
-                            >
-                                <div className="flex items-center gap-3 mb-4 text-red-400">
-                                    <AlertTriangle size={24} />
-                                    <h3 className="text-xl font-bold">Focus Areas</h3>
-                                </div>
-                                <p className="text-red-200/80 mb-4">You struggled with these topics. We recommend reviewing them:</p>
-                                <div className="flex flex-wrap gap-3">
-                                    {weakAreas.map((area, i) => (
-                                        <span key={i} className="px-4 py-2 bg-red-500/20 text-red-200 font-medium rounded-xl border border-red-500/30">
-                                            {area}
-                                        </span>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                    </div>
-
-                    {/* Right Column: Quiz */}
-                    <div className="lg:col-span-12 xl:col-span-4 space-y-8">
-                        <section className="gsap-stagger rounded-3xl p-8 bg-white/5 border border-white/10 hover:border-white/20 transition-colors sticky top-24">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
-                                    <HelpCircle size={20} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-primary tracking-tight">Interactive Quiz</h3>
+                    {/* Interactive Quiz Section */}
+                    <section className="gsap-stagger rounded-3xl p-8 bg-black/40 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
+                                <HelpCircle size={20} />
                             </div>
-                            <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
-                        </section>
-                    </div>
+                            <h3 className="text-2xl font-bold text-primary tracking-tight">Interactive Quiz</h3>
+                        </div>
+                        <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
+                    </section>
+
+                    {/* Smart Schedule Section - Moved to last */}
+                    <section className="gsap-stagger rounded-3xl p-8 bg-black/50 backdrop-blur-md border border-white/10 hover:border-white/20 transition-colors">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2.5 rounded-xl bg-white/10 text-primary border border-white/5 shadow-sm">
+                                <Calendar size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-primary tracking-tight">Smart Schedule</h3>
+                                <p className="text-sm text-secondary">Your personalized timeline</p>
+                            </div>
+                        </div>
+                        <StudySchedule />
+                    </section>
 
                 </div>
             </div>

@@ -130,11 +130,11 @@ const StudySchedule = () => {
 
             {/* Schedule Display */}
             {studySchedule && studySchedule.schedule ? (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1">
                     {studySchedule.schedule.map((dayPlan, index) => (
                         <div
                             key={index}
-                            className="gsap-card group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:shadow-xl hover:shadow-black/20"
+                            className="gsap-card group hover:-translate-y-1 transition-all duration-300 relative overflow-hidden rounded-2xl bg-black/30 backdrop-blur-sm border border-white/10 hover:border-white/20 hover:shadow-xl hover:shadow-black/20"
                         >
                             {/* Subtle Background Gradient */}
                             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

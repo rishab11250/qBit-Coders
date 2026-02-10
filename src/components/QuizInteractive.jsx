@@ -30,9 +30,9 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     return (
         <div className="space-y-6">
             {quizData.map((item, index) => (
-                <div key={index} className="p-6 rounded-xl bg-white/5 border border-white/10">
+                <div key={index} className="p-6 rounded-xl bg-black/30 backdrop-blur-sm border border-white/10">
                     <div className="flex justify-between items-start gap-4 mb-4">
-                        <h4 className="font-medium text-primary text-lg leading-snug">{item.question}</h4>
+                        <h4 className="font-medium text-white text-lg leading-snug break-words">{item.question}</h4>
                         <span className="text-xs font-semibold text-secondary uppercase tracking-wider whitespace-nowrap px-2 py-1 bg-white/10 rounded">
                             {item.topic}
                         </span>
@@ -47,7 +47,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                         </button>
                     ) : (
                         <div className="animate-fade-in">
-                            <div className="p-4 bg-violet-500/10 rounded-lg border border-violet-500/20 mb-4">
+                            <div className="p-4 bg-violet-500/30 backdrop-blur-sm rounded-lg border border-violet-500/30 mb-4">
                                 <p className="text-violet-300 font-medium">{item.answer}</p>
                             </div>
 

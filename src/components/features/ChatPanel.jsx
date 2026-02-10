@@ -72,107 +72,125 @@ const ChatPanel = ({ isOpen, onClose }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
-                    ref={panelRef}
-                    initial={{ x: '100%', opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: '100%', opacity: 0 }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className="fixed top-0 right-0 h-full w-full md:w-[400px] z-[60] glass-panel border-l border-white/10 shadow-2xl flex flex-col"
-                >
-                    {/* Header */}
-                    <div className="gsap-chat-item p-4 border-b border-white/10 flex justify-between items-center bg-black/20 backdrop-blur-md">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-[var(--accent-primary)]/20 rounded-lg text-[var(--accent-primary)]">
-                                <Bot size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-primary">AI Tutor</h3>
-                                <p className="text-xs text-secondary flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                                    {settings.model}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-white/10 rounded-full text-secondary hover:text-primary transition-colors"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
+                <>
+                    {/* Backdrop - Click to close */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] cursor-pointer"
+                    />
 
-                    {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                        {chatHistory.length === 0 ? (
-                            <div className="gsap-chat-item h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
-                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                    <MessageSquare size={32} className="text-[var(--accent-primary)]" />
+                    {/* Chat Panel */}
+                    <motion.div
+                        ref={panelRef}
+                        initial={{ x: '100%', opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: '100%', opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed top-0 right-0 h-full w-full md:w-[400px] z-[100] glass-panel border-l border-white/10 shadow-2xl flex flex-col pointer-events-auto"
+                    >
+                        {/* Header */}
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 backdrop-blur-md relative z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-[var(--accent-primary)]/20 rounded-lg text-[var(--accent-primary)]">
+                                    <Bot size={20} />
                                 </div>
-                                <p className="text-primary font-medium mb-1">No messages yet</p>
-                                <p className="text-sm text-secondary">Ask questions about your study material!</p>
+                                <div>
+                                    <h3 className="font-semibold text-primary">AI Tutor</h3>
+                                    <p className="text-xs text-secondary flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                        {settings.model}
+                                    </p>
+                                </div>
                             </div>
-                        ) : (
-                            chatHistory.map((msg, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                                >
-                                    <div className={`
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log('Close button clicked');
+                                    onClose();
+                                }}
+                                className="relative z-50 p-3 hover:bg-red-500/20 rounded-full text-white hover:text-red-400 transition-colors cursor-pointer pointer-events-auto bg-white/5"
+                                aria-label="Close chat"
+                            >
+                                <X size={22} strokeWidth={2.5} />
+                            </button>
+                        </div>
+
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                            {chatHistory.length === 0 ? (
+                                <div className="gsap-chat-item h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                                        <MessageSquare size={32} className="text-[var(--accent-primary)]" />
+                                    </div>
+                                    <p className="text-primary font-medium mb-1">No messages yet</p>
+                                    <p className="text-sm text-secondary">Ask questions about your study material!</p>
+                                </div>
+                            ) : (
+                                chatHistory.map((msg, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                                    >
+                                        <div className={`
                                         w-8 h-8 rounded-full flex items-center justify-center shrink-0
                                         ${msg.role === 'user' ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]' : 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'}
                                     `}>
-                                        {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
-                                    </div>
-                                    <div className={`
+                                            {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
+                                        </div>
+                                        <div className={`
                                         max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed
                                         ${msg.role === 'user'
-                                            ? 'bg-[var(--accent-primary)] text-white rounded-tr-sm'
-                                            : 'glass-card text-primary rounded-tl-sm border-white/10'}
+                                                ? 'bg-[var(--accent-primary)] text-white rounded-tr-sm'
+                                                : 'glass-card text-primary rounded-tl-sm border-white/10'}
                                     `}>
-                                        {msg.content}
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+
+                            {/* Typing Indicator */}
+                            {isChatLoading && (
+                                <div className="flex gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center shrink-0 text-[var(--accent-primary)]">
+                                        <Bot size={14} />
+                                    </div>
+                                    <div className="glass-card px-4 py-3 rounded-2xl rounded-tl-sm border-white/10 flex items-center gap-1">
+                                        <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                        <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                        <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                                     </div>
                                 </div>
-                            ))
-                        )}
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
 
-                        {/* Typing Indicator */}
-                        {isChatLoading && (
-                            <div className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center shrink-0 text-[var(--accent-primary)]">
-                                    <Bot size={14} />
-                                </div>
-                                <div className="glass-card px-4 py-3 rounded-2xl rounded-tl-sm border-white/10 flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                    <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                    <span className="w-2 h-2 bg-violet-400/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="gsap-chat-item p-4 border-t border-white/10 bg-black/20 backdrop-blur-md">
-                        <form onSubmit={handleSend} className="relative flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Ask a question..."
-                                className="w-full pl-4 pr-12 py-3 rounded-xl glass-input bg-white/5 text-primary text-sm focus:ring-2 focus:ring-violet-500/50 transition-all border-white/10 placeholder:text-gray-500"
-                                disabled={isChatLoading}
-                            />
-                            <button
-                                type="submit"
-                                disabled={!input.trim() || isChatLoading}
-                                className="absolute right-2 p-2 bg-[var(--accent-primary)] hover:opacity-90 text-white rounded-lg transition-all disabled:opacity-50"
-                            >
-                                {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                            </button>
-                        </form>
-                    </div>
-                </motion.div>
+                        {/* Input Area */}
+                        <div className="gsap-chat-item p-4 border-t border-white/10 bg-black/20 backdrop-blur-md">
+                            <form onSubmit={handleSend} className="relative flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Ask a question..."
+                                    className="w-full pl-4 pr-12 py-3 rounded-xl glass-input bg-white/5 text-primary text-sm focus:ring-2 focus:ring-violet-500/50 transition-all border-white/10 placeholder:text-gray-500"
+                                    disabled={isChatLoading}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || isChatLoading}
+                                    className="absolute right-2 p-2 bg-[var(--accent-primary)] hover:opacity-90 text-white rounded-lg transition-all disabled:opacity-50"
+                                >
+                                    {isChatLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                </button>
+                            </form>
+                        </div>
+                    </motion.div>
+                </>
             )}
         </AnimatePresence>
     );
