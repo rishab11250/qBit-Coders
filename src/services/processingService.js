@@ -48,6 +48,13 @@ export async function processInput(input) {
         } else if (typeof input === 'string') {
             // Check for YouTube URL
             if (input.includes('youtube.com') || input.includes('youtu.be')) {
+                // [Validation: Strict URL Check]
+                const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]{11}/;
+                if (!youtubeRegex.test(input)) {
+                    throw new Error("Invalid YouTube URL format. Please use a standard video link.");
+                }
+                console.log("🎥 Valid YouTube URL detected");
+
                 console.log("🎥 Processing YouTube transcript...");
                 // [Enhanced Prompt for Long Videos & Error Handling]
                 const systemPrompt = `
@@ -141,11 +148,16 @@ Focus on capturing *definitions*, *causal relationships*, and *examples*.
         metadata = { wordCount, estimatedStudyTimeMinutes, chunkCount };
         console.log("📊 Metadata:", metadata);
 
+        // [NEW] Concept Extraction
+        const concepts = extractConcepts(cleanedText);
+        console.log("🧠 Concepts extracted:", concepts);
+
         return {
             sourceType,
             rawText: cleanedText,
             chunks,
-            metadata
+            metadata,
+            concepts
         };
 
     } catch (error) {
@@ -211,8 +223,9 @@ function cleanText(text) {
         .trim();              // Remove leading/trailing whitespace
 }
 
+
 /**
- * Splits text into overlapping chunks.
+ * Semantic Chunking: Splits text by logical sections first, then by size.
  * @param {string} text 
  * @param {number} chunkSize 
  * @param {number} overlap 
@@ -220,6 +233,8 @@ function cleanText(text) {
  */
 function chunkText(text, chunkSize = 1200, overlap = 200) {
     if (!text) return [];
+
+    console.log("🧠 Semantic chunking enabled");
 
     // Safety check for parameters
     if (chunkSize <= 0) chunkSize = 1200;
@@ -229,31 +244,100 @@ function chunkText(text, chunkSize = 1200, overlap = 200) {
     if (text.length <= chunkSize) return [text];
 
     const chunks = [];
-    let startIndex = 0;
 
-    while (startIndex < text.length) {
-        let endIndex = startIndex + chunkSize;
+    // 1. Split by logical boundaries (Headings, Timestamps, Double Newlines)
+    // Regex matches:
+    // - \n\n+ (Paragraph breaks)
+    // - ^#{1,3}\s (Headings)
+    // - \d{1,2}:\d{2} (Timestamps like 00:00)
+    // - "Chapter" or "Section" case insensitive
+    const sectionRegex = /(\n\n+|(?:\r?\n|^)#{1,3}\s|(?:\r?\n|^)(?:Chapter|Section)\s|(?:\r?\n|^)\[?\d{1,2}:\d{2}\]?)/i;
 
-        // Ensure we don't cut words in half if possible (look for space)
-        if (endIndex < text.length) {
-            // Look for the last space within the limit to break cleanly
-            const lastSpace = text.lastIndexOf(' ', endIndex);
-            if (lastSpace > startIndex) {
-                endIndex = lastSpace;
+    // Split and keep delimiters to maintain context
+    let rawSections = text.split(sectionRegex).filter(Boolean);
+
+    let currentChunk = "";
+
+    for (let i = 0; i < rawSections.length; i++) {
+        const section = rawSections[i];
+
+        // 2. Check if adding this section exceeds chunk size
+        if ((currentChunk.length + section.length) > chunkSize) {
+
+            // If current chunk has content, push it
+            if (currentChunk.trim().length > 0) {
+                chunks.push(currentChunk.trim());
             }
+
+            // 3. Handle specific section being too large on its own
+            if (section.length > chunkSize) {
+                // Fallback to character-based splitting for this specific giant section
+                let startIndex = 0;
+                while (startIndex < section.length) {
+                    let endIndex = startIndex + chunkSize;
+                    if (endIndex < section.length) {
+                        const lastSpace = section.lastIndexOf(' ', endIndex);
+                        if (lastSpace > startIndex) endIndex = lastSpace;
+                    }
+                    chunks.push(section.slice(startIndex, endIndex).trim());
+                    startIndex = endIndex - overlap;
+                }
+                currentChunk = ""; // Reset after processing giant section
+            } else {
+                // Start new chunk with this section (re-using overlap logic ideally, but keeping simple for now)
+                // Integrating overlap: grab last 'overlap' chars from previous chunk
+                const prevChunk = chunks[chunks.length - 1] || "";
+                const overlapText = prevChunk.slice(-overlap);
+                currentChunk = overlapText + "\n" + section;
+            }
+        } else {
+            // Append to current chunk
+            currentChunk += section;
         }
+    }
 
-        const chunk = text.slice(startIndex, endIndex).trim();
-        if (chunk) chunks.push(chunk);
-
-        // Move forward, subtracting overlap
-        startIndex = endIndex - overlap;
-
-        // Prevent infinite loop if overlap >= chunk size (shouldn't happen with defaults)
-        if (startIndex >= endIndex) startIndex = endIndex;
+    // Push remaining text
+    if (currentChunk.trim().length > 0) {
+        chunks.push(currentChunk.trim());
     }
 
     return chunks;
+}
+
+/**
+ * Extracts top concepts/keywords from text based on frequency.
+ * @param {string} text 
+ * @returns {string[]}
+ */
+function extractConcepts(text) {
+    if (!text) return [];
+
+    const stopWords = new Set([
+        "the", "is", "at", "which", "on", "and", "a", "an", "in", "to", "of", "for", "it",
+        "this", "that", "with", "as", "by", "from", "be", "or", "are", "was", "were", "but",
+        "not", "have", "has", "had", "they", "you", "we", "can", "will", "if", "your", "their",
+        "about", "more", "when", "what", "who", "all", "also", "how", "why", "so", "just"
+    ]);
+
+    // Normalize: lowercase, remove punctuation (keeping hyphens for compound words occasionally useful, but simple regex is safer)
+    const words = text.toLowerCase()
+        .replace(/[^\w\s]/g, '') // Remove symbols
+        .split(/\s+/);
+
+    const frequency = {};
+
+    words.forEach(word => {
+        if (word.length > 3 && !stopWords.has(word) && !/^\d+$/.test(word)) {
+            frequency[word] = (frequency[word] || 0) + 1;
+        }
+    });
+
+    // Sort by frequency
+    const sortedConcepts = Object.keys(frequency)
+        .sort((a, b) => frequency[b] - frequency[a])
+        .slice(0, 15); // Top 15
+
+    return sortedConcepts;
 }
 
 // Development ready check
