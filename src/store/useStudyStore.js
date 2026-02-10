@@ -39,7 +39,6 @@ const useStudyStore = create(
 
             // Settings State
             settings: {
-                apiKey: '',
                 model: 'gemini-2.5-flash-lite',
                 difficulty: 'Intermediate',
                 quizCount: 5,

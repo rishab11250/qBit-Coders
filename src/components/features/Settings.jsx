@@ -32,23 +32,6 @@ const Settings = () => {
             <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Application Settings">
                 <div className="space-y-6">
 
-                    {/* API Key Section */}
-                    <div>
-                        <label className="block text-sm font-medium text-secondary mb-1">
-                            Gemini API Key
-                        </label>
-                        <input
-                            type="password"
-                            value={localSettings.apiKey}
-                            onChange={(e) => setLocalSettings({ ...localSettings, apiKey: e.target.value })}
-                            placeholder="Enter your Gemini API Key"
-                            className="w-full px-3 py-2 bg-transparent border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition-all placeholder:text-gray-500"
-                        />
-                        <p className="mt-1 text-xs text-secondary">
-                            Your key is stored locally in your browser. Get one at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-violet-500 hover:underline">Google AI Studio</a>.
-                        </p>
-                    </div>
-
                     {/* Model Selection */}
                     <div>
                         <label className="block text-sm font-medium text-secondary mb-1">
