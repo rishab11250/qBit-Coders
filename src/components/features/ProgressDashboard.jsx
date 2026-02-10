@@ -133,22 +133,25 @@ const ProgressDashboard = () => {
                     {topicData.length > 0 && (
                         <div className="progress-card rounded-2xl bg-[var(--bg-secondary)] border border-primary/5 p-5">
                             <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">Topic Performance</h4>
-                            <ResponsiveContainer width="100%" height={220}>
-                                <BarChart data={topicData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
-                                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} width={100} />
-                                    <Tooltip content={<TopicTooltip />} />
-                                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={16}>
-                                        {topicData.map((entry, index) => (
-                                            <Cell
-                                                key={index}
-                                                fill={entry.score >= 70 ? '#14b8a6' : entry.score >= 40 ? '#f59e0b' : '#f43f5e'}
-                                            />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <div className="topic-chart-container group/chart">
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <BarChart data={topicData} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                        <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: '#a0a0a0' }} axisLine={false} tickLine={false} />
+                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0', fontWeight: 500 }} axisLine={false} tickLine={false} width={100} />
+                                        <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={16}>
+                                            {topicData.map((entry, index) => (
+                                                <Cell
+                                                    key={index}
+                                                    fill={entry.score >= 70 ? '#14b8a6' : entry.score >= 40 ? '#f59e0b' : '#f43f5e'}
+                                                    className="transition-all duration-300 ease-out origin-left hover:brightness-125 hover:drop-shadow-[0_0_8px_rgba(139,92,246,0.5)] hover:scale-x-105 group-hover/chart:opacity-40 hover:!opacity-100"
+                                                    style={{ transformBox: 'fill-box' }}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
                     )}
                 </div>
