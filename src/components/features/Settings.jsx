@@ -59,8 +59,9 @@ const Settings = () => {
                             onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
                             className="w-full px-3 py-2 bg-white/5 border border-gray-500/30 text-primary rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
                         >
-                            <option value="gemini-2.5-flash-lite" className="bg-slate-900 text-white">Gemini 2.5 Flash lite (Faster)</option>
-                            <option value="gemini-1.5-pro" className="bg-slate-900 text-white">Gemini 1.5 Pro (More Capable)</option>
+                            <option value="gemini-2.5-flash-lite" className="bg-slate-900 text-white">Gemini 2.5 Flash Lite (Fast & Efficient)</option>
+                            <option value="gemini-2.5-flash" className="bg-slate-900 text-white">Gemini 2.5 Flash (Balanced)</option>
+                            <option value="gemini-3-flash" className="bg-slate-900 text-white">Gemini 3 Flash (Most Capable)</option>
                         </select>
                     </div>
 
