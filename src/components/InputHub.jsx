@@ -21,14 +21,15 @@ const InputHub = ({ onGenerate }) => {
     } = useStudyStore();
 
     const [activeTab, setActiveTab] = useState('pdf');
-    const [localFile, setLocalFile] = useState(null);
-    const [processingStatus, setProcessingStatus] = useState(''); // "extracting", "transcribing", etc.
+    const [localFiles, setLocalFiles] = useState([]); // [CHANGED] Array
+    const [processingStatus, setProcessingStatus] = useState('');
 
     const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setLocalFile(file);
-            setPdfFile(file);
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            setLocalFiles(files);
+            // Legacy support: set the first file to store if needed, mostly for single-file assumptions elsewhere
+            setPdfFile(files[0]);
         }
     };
 
@@ -47,25 +48,54 @@ const InputHub = ({ onGenerate }) => {
             let result = null;
 
             // 1. Process based on Tab
-            if (activeTab === 'pdf' && localFile) {
-                result = await processInput(localFile);
+            if (activeTab === 'pdf' && localFiles.length > 0) {
+                console.log(`📂 Processing ${localFiles.length} files...`);
+                let allChunks = [];
+                let combinedRawText = "";
+
+                // Process each file sequentially
+                for (let i = 0; i < localFiles.length; i++) {
+                    const file = localFiles[i];
+                    setProcessingStatus(`Processing ${i + 1}/${localFiles.length}: ${file.name}...`);
+
+                    try {
+                        const fileResult = await processInput(file);
+                        if (fileResult) {
+                            allChunks.push(...fileResult.chunks);
+                            combinedRawText += fileResult.rawText + "\n\n";
+                        }
+                    } catch (err) {
+                        console.error(`Error processing file ${file.name}:`, err);
+                        // We continue with other files even if one fails
+                    }
+                }
+
+                if (allChunks.length > 0) {
+                    result = {
+                        sourceType: 'multiple-pdf',
+                        rawText: combinedRawText,
+                        chunks: allChunks
+                    };
+                }
+
             } else if (activeTab === 'notes' && notes) {
-                result = await processInput(notes);
+                result = await processInput(notes); // Treat notes as string input
             } else if (activeTab === 'video' && videoUrl) {
-                // Video processing via processInput (which calls Gemini for transcript)
+                // Video processing (assuming processInput handles string URL)
                 result = await processInput(videoUrl);
             }
 
             if (result) {
-                console.log(`✂️ Chunks created: ${result.chunks.length}`);
+                console.log(`✂️ Total chunks: ${result.chunks.length}`);
 
                 // Update Store
                 setProcessedContent(result);
-                // Also set legacy extractedText for backward compatibility if needed, 
-                // but aiService now prefers processedContent.
                 setExtractedText(result.rawText);
 
-                console.log("🧠 Sending to AI...");
+                console.log("🧠 Sending combined content to AI...");
+                await onGenerate();
+            } else if (activeTab === 'video' && !result) {
+                // Fallback if video isn't handled by processInput for some reason
                 await onGenerate();
             } else {
                 // Should not happen if processInput works, but safety net
@@ -82,7 +112,7 @@ const InputHub = ({ onGenerate }) => {
     };
 
     const isReady = () => {
-        if (activeTab === 'pdf') return !!localFile && !isLoading && !error;
+        if (activeTab === 'pdf') return localFiles.length > 0 && !isLoading && !error;
         if (activeTab === 'notes') return notes.length > 20;
         if (activeTab === 'video') return videoUrl.includes('youtube');
         return false;
@@ -196,7 +226,7 @@ const InputHub = ({ onGenerate }) => {
                                 initial="hidden"
                                 animate="visible"
                                 className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all h-full flex flex-col items-center justify-center group
-                                    ${localFile
+                                    ${localFiles.length > 0
                                         ? 'border-emerald-500/50 bg-emerald-500/10'
                                         : 'border-white/10 hover:border-violet-500/50 hover:bg-white/5'
                                     }`}
@@ -204,26 +234,31 @@ const InputHub = ({ onGenerate }) => {
                                 <input
                                     type="file"
                                     accept=".pdf"
+                                    multiple // [CHANGED] Allow multiple
                                     onChange={handleFileChange}
                                     className="hidden"
                                     id="pdf-upload"
                                     disabled={isLoading}
                                 />
                                 <label htmlFor="pdf-upload" className="cursor-pointer w-full h-full flex flex-col items-center justify-center">
-                                    {localFile ? (
+                                    {localFiles.length > 0 ? (
                                         <>
                                             <div className="w-20 h-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mb-4 neon-shadow">
                                                 <CheckCircle2 size={40} />
                                             </div>
-                                            <p className="text-xl font-medium text-primary">{localFile.name}</p>
-                                            <p className="text-sm text-emerald-500 mt-2">{(localFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze</p>
+                                            <p className="text-xl font-medium text-primary">
+                                                {localFiles.length === 1 ? localFiles[0].name : `${localFiles.length} files selected`}
+                                            </p>
+                                            <p className="text-sm text-emerald-500 mt-2">
+                                                {(localFiles.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB Total • Ready to analyze
+                                            </p>
                                         </>
                                     ) : (
                                         <>
                                             <div className="w-20 h-20 bg-primary/5 text-primary rounded-full flex items-center justify-center mb-6 border border-primary/10 group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
                                                 <Upload size={36} />
                                             </div>
-                                            <p className="text-xl font-medium text-primary mb-2">Drop your PDF here</p>
+                                            <p className="text-xl font-medium text-primary mb-2">Drop your PDFs here</p>
                                             <p className="text-sm text-secondary">or click to browse functionality</p>
                                         </>
                                     )}
