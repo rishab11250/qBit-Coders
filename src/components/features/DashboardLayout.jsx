@@ -14,7 +14,7 @@ import StudyMaterial from './StudyMaterial'; // [NEW] Import StudyMaterial
 import SidebarNav from '../layout/SidebarNav';
 
 const DashboardLayout = () => {
-    const { summary, concepts, studyMaterial, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen, isQuizLoading } = useStudyStore(); // [NEW] Extract isQuizLoading
+    const { summary, concepts, studyMaterial, quiz, weakAreas, addWeakArea, reset, isChatOpen, setIsChatOpen } = useStudyStore();
     const [shareToast, setShareToast] = useState(false);
     const containerRef = useRef(null);
     const [activeSection, setActiveSection] = useState('summary');
@@ -319,18 +319,7 @@ const DashboardLayout = () => {
                                 </div>
                             </div>
 
-                            {/* Quiz Loading State */}
-                            {isQuizLoading && (!quiz || quiz.length === 0) ? (
-                                <div className="glass-panel p-8 rounded-3xl border border-amber-500/20 flex flex-col items-center justify-center gap-4 text-center min-h-[300px]">
-                                    <div className="w-12 h-12 rounded-full border-4 border-amber-500/30 border-t-amber-500 animate-spin" />
-                                    <div>
-                                        <h4 className="text-lg font-bold text-primary">Crafting Your Quiz...</h4>
-                                        <p className="text-sm text-secondary">Analyzing the deep dive notes to create custom questions.</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
-                            )}
+                            <QuizInteractive quizData={quiz} onWeakTopicDetected={addWeakArea} />
                         </section>
 
                         {/* Timeline Section */}

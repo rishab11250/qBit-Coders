@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { CheckCircle, XCircle, Eye, Clock, Trophy, ArrowRight, RotateCcw, Zap, Target, Filter, ChevronDown, RefreshCw, Flame, ChevronRight, Award, BarChart } from 'lucide-react';
-import { generateStudyContent } from '../services/aiService';
+import { generateQuizOnly } from '../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import useStudyStore from '../store/useStudyStore';
 
 const TIMER_DURATION = 30;
 
 const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
-    const { addQuizResult, weakAreas, quizHistory, processedContent, setQuiz } = useStudyStore();
+    const { addQuizResult, weakAreas, quizHistory, processedContent, setQuiz, summary, topics } = useStudyStore();
 
-    // Mode: 'start' | 'active' | 'results'
+    // Mode: 'start' | 'generating' | 'active' | 'results'
     const [mode, setMode] = useState('start');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
@@ -54,7 +54,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
 
     // Intersect global weak topics with CURRENT quiz topics
     const relevantWeakTopics = useMemo(() => {
-        if (!quizData || quizData.length === 0) return [];
+        if (!quizData || quizData.length === 0) return allWeakTopics; // Show all weak topics when no quiz loaded yet
         const currentTopics = new Set(quizData.map(q => q.topic?.toLowerCase()).filter(Boolean));
         return allWeakTopics.filter(wt =>
             currentTopics.has(wt.toLowerCase()) ||
@@ -120,32 +120,45 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
         }
     };
 
-    const startQuiz = (selectedMode = 'all') => {
-        setQuizTotal(selectedCount);
+    // ON-DEMAND Quiz Generation
+    const startQuiz = async (selectedMode = 'all') => {
+        setMode('generating');
+        setIsGenerating(true);
         setFilterMode(selectedMode);
-        setMode('active');
-        setCurrentIndex(0);
-        setScore(0);
-        setStreak(0);
-        setAnswers({});
-        setShowAnswer(false);
-        setFeedbackState(null);
-        setTimeLeft(TIMER_DURATION);
-        setIsTimerActive(true);
-        answeredRef.current = {};
-    };
 
-    const handleRegenerate = async () => {
-        if (!processedContent?.text) return;
         try {
-            setIsGenerating(true);
-            const result = await generateStudyContent('text', processedContent.text);
+            // Determine weak areas to pass (only after 1+ quizzes taken)
+            const weakAreasToSend = (quizHistory.length >= 1 && selectedMode === 'weak')
+                ? allWeakTopics
+                : [];
+
+            const summaryText = typeof summary === 'object'
+                ? (summary.simple_explanation || JSON.stringify(summary))
+                : summary;
+
+            const result = await generateQuizOnly(summaryText, topics, selectedCount, weakAreasToSend);
+
             if (result && result.quiz && result.quiz.length > 0) {
                 setQuiz(result.quiz);
-                setSelectedCount(Math.min(20, result.quiz.length));
+                setQuizTotal(result.quiz.length);
+
+                // Transition to active quiz
+                setMode('active');
+                setCurrentIndex(0);
+                setScore(0);
+                setStreak(0);
+                setAnswers({});
+                setShowAnswer(false);
+                setFeedbackState(null);
+                setTimeLeft(TIMER_DURATION);
+                setIsTimerActive(true);
+                answeredRef.current = {};
+            } else {
+                throw new Error("No quiz questions generated");
             }
         } catch (error) {
-            console.error("Failed to regenerate quiz:", error);
+            console.error("Quiz Generation Failed:", error);
+            setMode('start'); // Go back to start on failure
         } finally {
             setIsGenerating(false);
         }
@@ -220,16 +233,8 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
         });
     };
 
-    if (!quizData || quizData.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                    <Zap className="text-secondary/50" />
-                </div>
-                <p className="text-secondary italic">No quiz questions available yet.</p>
-            </div>
-        );
-    }
+
+
 
     // Timer ring visual
     const circumference = 2 * Math.PI * 22; // Slightly larger
@@ -263,7 +268,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                 Knowledge Check
                             </h3>
                             <p className="text-secondary/80 text-lg mb-8 leading-relaxed">
-                                Put your skills to the test! You have <strong>{quizData.length}</strong> questions ready.
+                                AI will generate a fresh quiz tailored to your study material.
                             </p>
 
                             {/* Settings Card */}
@@ -283,36 +288,45 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
                                         <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none group-hover:text-violet-400 transition-colors" />
                                     </div>
                                 </div>
-
-                                {(quizData.length < selectedCount || quizData.length < 20) && (processedContent?.text || useStudyStore.getState().extractedText) && (
-                                    <button
-                                        onClick={handleRegenerate}
-                                        disabled={isGenerating}
-                                        className="w-full mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 py-3 rounded-xl border border-violet-500/20 transition-all disabled:opacity-50"
-                                    >
-                                        <RefreshCw size={14} className={`transition-transform duration-700 ${isGenerating ? 'animate-spin' : ''}`} />
-                                        {isGenerating ? 'Generating...' : 'Load More Questions'}
-                                    </button>
-                                )}
                             </div>
 
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => startQuiz('all')}
-                                    className="group w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-lg shadow-xl shadow-violet-900/20 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-white/10 flex items-center justify-center gap-3"
+                                    disabled={isGenerating}
+                                    className="group w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-lg shadow-xl shadow-violet-900/20 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-white/10 flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
-                                    Start Quiz <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <Zap size={20} /> Generate & Start Quiz <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
 
-                                {relevantWeakTopics.length > 0 && (
+                                {allWeakTopics.length > 0 && quizHistory.length >= 1 && (
                                     <button
                                         onClick={() => startQuiz('weak')}
-                                        className="w-full py-4 rounded-xl bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+                                        disabled={isGenerating}
+                                        className="w-full py-4 rounded-xl bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        <Target size={18} /> Focus on Weak Areas
+                                        <Target size={18} /> Focus on Weak Areas ({allWeakTopics.length} topics)
                                     </button>
                                 )}
                             </div>
+                        </motion.div>
+                    )}
+
+                    {/* GENERATING SCREEN */}
+                    {mode === 'generating' && (
+                        <motion.div
+                            key="generating"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="text-center max-w-md mx-auto"
+                        >
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin" />
+                            <h3 className="text-2xl font-bold text-primary mb-2">Crafting Your Quiz...</h3>
+                            <p className="text-secondary text-sm">
+                                Generating {selectedCount} custom questions based on your study material.
+                                {filterMode === 'weak' && <><br /><span className="text-rose-400">Focusing on your weak areas 🎯</span></>}
+                            </p>
                         </motion.div>
                     )}
 

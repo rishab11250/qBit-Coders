@@ -6,11 +6,11 @@ import InputHub from './components/InputHub';
 import DashboardLayout from './components/features/DashboardLayout';
 import Background3D from './components/ui/Background3D';
 import PomodoroTimer from './components/features/PomodoroTimer';
-import { generateStudyContent, generateStudyContentWithSearch, fileToBase64, generateQuizOnly } from './services/aiService'; // [UPDATED] Import new function
+import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
 import HistorySidebar from './components/features/HistorySidebar';
 
 const App = () => {
-  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated, isChatOpen, setQuizLoading, updateQuizData } = useStudyStore();
+  const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings, incrementPlansGenerated, isChatOpen } = useStudyStore();
   const [isSharedPlan, setIsSharedPlan] = useState(false);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false); // [NEW] Lifted state
@@ -117,27 +117,13 @@ const App = () => {
           summary: result.summary || "No summary available.",
           topics: result.topics || [],
           concepts: result.concepts || [],
-          detailed_notes: result.detailed_notes || [], // [FIX] Pass detailed notes to store
-          quiz: [], // Quiz comes later
+          detailed_notes: result.detailed_notes || [],
+          quiz: [], // Quiz is generated on-demand now
         };
 
-        // 1. Show Dashboard Immediately
         setStudyData(safeResult);
         incrementPlansGenerated();
-
-        // 2. Start Background Quiz Generation
-        setQuizLoading(true);
-        generateQuizOnly(safeResult.summary, safeResult.topics)
-          .then(quizData => {
-            console.log("Quiz Generated in Background:", quizData);
-            updateQuizData(quizData.quiz || []);
-            // Save complete plan to history
-            useStudyStore.getState().savePlanToHistory({ ...safeResult, quiz: quizData.quiz || [] });
-          })
-          .catch(err => {
-            console.error("Background Quiz Failed:", err);
-            setQuizLoading(false);
-          });
+        useStudyStore.getState().savePlanToHistory(safeResult);
 
       } else {
         throw new Error("AI returned empty result.");

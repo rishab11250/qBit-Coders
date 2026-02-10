@@ -32,11 +32,11 @@ const resetKeyRotation = () => { currentKeyIndex = 0; };
  * Models to try if the primary one is rate-limited.
  * Order matters: prefer newer/faster, then older/stable.
  */
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro'];
+const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'];
 
 /** Builds the API URL dynamically based on the selected model */
 const getApiUrl = (model = null) => {
-  const selectedModel = model || getSettings().model || 'gemini-2.5-flash';
+  const selectedModel = model || getSettings().model || 'gemini-2.0-flash';
   return `${BASE_API_URL}/${selectedModel}:generateContent`;
 };
 
@@ -48,7 +48,7 @@ const getApiUrl = (model = null) => {
 async function executeGeminiRequest(payload) {
   if (API_KEYS.length === 0) throw new Error("No API Keys configured.");
 
-  const preferredModel = getSettings().model || 'gemini-2.5-flash';
+  const preferredModel = getSettings().model || 'gemini-2.0-flash';
 
   // Create a list of models to try: [Preferred, ...Fallbacks]
   const modelsToTry = [
@@ -195,54 +195,22 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
     inputType = 'text';
   }
 
-  // Define the JSON structure. 
-  // IMPORTANT: We include 'concepts' to support existing DashboardLayout UI.
-  // Force 20 questions for all generations to allow client-side filtering
   const { difficulty } = getSettings();
-  const quizCount = 20;
 
-  const systemPrompt = `
-    You are an expert AI Study Coach and Curriculum Designer.
-    Your goal is to process the provided study material into a highly structured, deep, and engaging mastery plan.
+  const systemPrompt = `You are an expert AI Study Coach. Process the study material into a structured study plan.
 
-    **Configuration:**
-    - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
-    - Difficulty Level: ${difficulty} (Adjust vocabulary, depth, and question complexity accordingly)
-    - Quiz Question Count: ${quizCount} (Generate a comprehensive set covering all topics)
+Difficulty: ${difficulty}
 
-    **Required Output Format (JSON ONLY):**
-    {
-      "summary": "Start with a 'Simple Explanation' (EL.I5 style, 2 sentences). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis.",
-      "topics": ["Topic 1 (Foundation)", "Topic 2 (Core Mechanism)", "Topic 3 (Advanced Application)", "Topic 4 (Future/Edge Cases)"],
-      "concepts": [
-        { 
-          "name": "Main Concept", 
-          "related": ["Prerequisite Concept", "Sub-component", "Real-world Example"] 
-        }
-      ],
-      "detailed_notes": [
-        {
-          "topic": "Topic Name",
-          "content": "Comprehensive learning material in Markdown format. Use headers, bullet points, bold text, and code blocks if relevant.",
-          "key_points": ["Key takeaway 1", "Key takeaway 2"],
-          "real_world_example": "A concrete analogy or application."
-        }
-      ]
-    }
+Return JSON ONLY (no markdown wrappers):
+{
+  "summary": "2-sentence simple explanation + 3-4 bullet Executive Brief",
+  "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4"],
+  "concepts": [{"name": "Concept", "related": ["Related1", "Related2"]}],
+  "detailed_notes": [{"topic": "Topic", "content": "Markdown notes", "key_points": ["Point1"], "real_world_example": "Example"}]
+}
 
-    **Instructions for Excellence:**
-    1. **Summary (The "Hook"):** 
-       - Do not just summarize. *Synthesize*. 
-       - Explain *why* this matters. Connect the dots between isolated facts.
-       - **Style**: Explain complex ideas simply (like Feynman). If you can't explain it simply, you don't understand it.
-
-    2. **Concept Graph (The "Map"):** 
-       - Avoid generic links like "Definition".
-       - Focus on *Structural* relationships: "Part of", "Caused by", "Enables", "Contrast with".
-       - Ensure a mix of high-level nodes and specific examples.
-
-    **Constraint:** Return ONLY the raw JSON. No markdown formatting (no \`\`\`json wrappers).
-  `;
+Keep summary concise. For concepts, focus on structural relationships. For detailed_notes, be thorough but efficient.
+Return ONLY raw JSON.`;
 
   // Construct payload
   const parts = [{ text: systemPrompt }];
@@ -310,12 +278,23 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 }
 
 /**
- * Generates ONLY the quiz based on the study plan context.
- * This runs in the background to speed up initial load.
+ * Generates quiz ON-DEMAND when user clicks "Start Quiz".
+ * Accepts weak areas to focus on after the user has taken 1-2 quizzes.
+ * 
+ * @param {string} summary - The study plan summary
+ * @param {string[]} topics - The study plan topics
+ * @param {number} questionCount - Number of questions to generate (5/10/15/20)
+ * @param {string[]} weakAreas - Topics the user is weak in (from previous quizzes)
  */
-export async function generateQuizOnly(summary, topics) {
+export async function generateQuizOnly(summary, topics, questionCount = 10, weakAreas = []) {
   const { difficulty } = getSettings();
-  const quizCount = 20;
+
+  const weakAreaInstruction = weakAreas.length > 0
+    ? `\n    **IMPORTANT - Weak Area Focus:**
+    The student has previously struggled with these topics: ${weakAreas.join(', ')}.
+    Dedicate ~50% of your questions to these weak areas to help them improve.
+    The remaining questions should cover other topics for balanced learning.`
+    : '';
 
   const systemPrompt = `
     You are an expert Examiner.
@@ -323,7 +302,8 @@ export async function generateQuizOnly(summary, topics) {
 
     **Configuration:**
     - Difficulty: ${difficulty}
-    - Question Count: ${quizCount}
+    - Question Count: ${questionCount}
+    ${weakAreaInstruction}
 
     **Required Output Format (JSON ONLY):**
     {
@@ -332,13 +312,13 @@ export async function generateQuizOnly(summary, topics) {
           "question": "Scenario-based or conceptual question?", 
           "answer": "Correct answer with a *concise* explanation.", 
           "topic": "Topic tag",
-          "type": "Conceptual" // or "Application", "Fact", "Analysis"
+          "type": "Conceptual"
         }
       ]
     }
 
     **Instructions:**
-    - Generate exactly ${quizCount} questions.
+    - Generate exactly ${questionCount} questions.
     - **DIVERSITY**:
       - 30% Fact Recall
       - 40% Conceptual
