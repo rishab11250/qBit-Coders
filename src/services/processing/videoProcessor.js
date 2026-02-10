@@ -21,8 +21,8 @@ export const extractVideoId = (url) => {
 
 /**
  * Fetches and processes YouTube video transcript.
- * Uses a LOCAL VITE PROXY to bypass CORS and Bot Detection.
- * Fetches JSON transcript for reliability.
+ * Uses VITE MIDDLEWARE (/api/transcript) which runs custom server-side scraping.
+ * Returns XML string. Client parses it.
  * 
  * @param {string} url - YouTube URL.
  * @returns {Promise<{text: string, metadata: {title: string, url: string, duration: number}, chunks: Array<{timestamp: string, content: string}>}>}
@@ -36,95 +36,81 @@ export const processVideo = async (url) => {
   console.log(`🎥 Processing Video ID: ${videoId}`);
 
   try {
-    // 1. Fetch Video Page HTML via Local Proxy
-    const videoPageUrl = `/api/yt/watch?v=${videoId}`;
+    // 1. Fetch XML via Vite Middleware (Server-side)
+    const middlewareUrl = `/api/transcript?videoId=${videoId}`;
+    console.log(`⬇️ Fetching XML via Middleware: ${middlewareUrl}`);
 
-    console.log("⬇️ Fetching video page via Local Proxy...");
-    const response = await fetch(videoPageUrl, {
-      headers: {
-        'Accept-Language': 'en-US,en;q=0.9'
+    const transcriptResp = await fetch(middlewareUrl);
+
+    if (!transcriptResp.ok) {
+      const errText = await transcriptResp.text();
+      console.error("Middleware Error:", errText);
+      throw new Error(`Transcript Fetch Failed: ${errText}`);
+    }
+
+    const rawResponseText = await transcriptResp.text();
+
+    if (!rawResponseText || rawResponseText.trim().length === 0) {
+      throw new Error("Transcript is empty.");
+    }
+
+    // Check for JSON error from middleware (if content-type json?)
+    if (rawResponseText.startsWith('{') && rawResponseText.includes('"error"')) {
+      try {
+        const errJson = JSON.parse(rawResponseText);
+        if (errJson.error) throw new Error(errJson.error);
+      } catch (e) { }
+    }
+
+    console.log(`✅ XML fetched. Parsing...`);
+
+    // 2. Parse XML
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(rawResponseText, "text/xml");
+
+    const textNodes = Array.from(xmlDoc.getElementsByTagName("text"));
+
+    if (textNodes.length === 0) {
+      // Fallback: check parsing errors
+      if (rawResponseText.trim().startsWith('<!DOCTYPE html>')) {
+        throw new Error("Received HTML instead of XML (Middleware might have failed).");
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch video page via local proxy (Status: ${response.status}). Ensure Vite server is running.`);
+      console.warn("XML parsed but no <text> nodes found.");
+      return { text: "", metadata: { title: "Unknown", url, duration: 0 }, chunks: [] };
     }
 
-    const html = await response.text();
-
-    // 2. Extract Metadata (Title)
-    const titleMatch = html.match(/<title>(.*?)<\/title>/);
-    const title = titleMatch ? titleMatch[1].replace(' - YouTube', '') : 'Unknown Video';
-
-    // 3. Extract Captions JSON
-    if (!html.includes('captionTracks')) {
-      throw new Error("No captions found (Video might be age-restricted, private, or lack subtitles).");
-    }
-
-    const captionMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
-    if (!captionMatch) throw new Error("Caption track data not found in page.");
-
-    const tracks = JSON.parse(captionMatch[1]);
-
-    const track = tracks.find(t => t.languageCode === 'en' && !t.kind)
-      || tracks.find(t => t.languageCode === 'en')
-      || tracks[0];
-
-    if (!track) throw new Error("No suitable caption track found.");
-
-    const captionUrl = track.baseUrl;
-    console.log(`📝 Caption URL extracted. Preparing JSON fetch...`);
-
-    // 4. Transform Caption URL for JSON and Proxy
-    // Force JSON format (fmt=json3)
-    let jsonUrl = captionUrl.replace(/fmt=[^&]+/, ''); // remove existing fmt
-    if (jsonUrl.includes('?')) jsonUrl += '&fmt=json3';
-    else jsonUrl += '?fmt=json3';
-
-    // Proxy transformation
-    let proxyJsonUrl = jsonUrl;
-    if (jsonUrl.startsWith('https://www.youtube.com')) {
-      proxyJsonUrl = jsonUrl.replace('https://www.youtube.com', '/api/yt');
-    } else if (jsonUrl.startsWith('https://youtu.be')) {
-      proxyJsonUrl = jsonUrl.replace('https://youtu.be', '/api/yt');
-    } else if (jsonUrl.startsWith('https://www.google.com')) {
-      console.warn("Caption URL is google.com, attempting proxy replace:", jsonUrl);
-      proxyJsonUrl = jsonUrl.replace('https://www.google.com', '/api/yt');
-    }
-
-    console.log(`📝 Fetching JSON transcript from: ${proxyJsonUrl}`);
-
-    // 5. Fetch Transcript JSON via Local Proxy
-    const jsonResp = await fetch(proxyJsonUrl);
-    if (!jsonResp.ok) throw new Error(`Failed to fetch JSON via local proxy: ${jsonResp.status}`);
-
-    let jsonData;
+    // 3. Fetch Metadata (Title) via Local Proxy HTML
+    let title = "YouTube Video";
     try {
-      jsonData = await jsonResp.json();
+      const videoPageUrl = `/api/yt/watch?v=${videoId}`;
+      const htmlResp = await fetch(videoPageUrl);
+      if (htmlResp.ok) {
+        const html = await htmlResp.text();
+        const titleMatch = html.match(/<title>(.*?)<\/title>/);
+        if (titleMatch) {
+          title = titleMatch[1].replace(' - YouTube', '');
+        }
+      }
     } catch (e) {
-      throw new Error("Failed to parse transcript JSON. Response might be empty or invalid.");
+      console.warn("Failed to fetch video metadata, using default title.", e);
     }
 
-    if (!jsonData.events) throw new Error("Invalid JSON transcript format: 'events' missing.");
-
-    // 6. Parse JSON & Group into ~30s Chunks
+    // 4. Process Transcript into Chunks
     const chunks = [];
     let currentChunkContent = "";
     let currentChunkStart = 0;
     let fullText = "";
     let lastEnd = 0;
 
-    jsonData.events.forEach((event, index) => {
-      // event: { tStartMs: 123, seps: [ { utf8: "text" } ] }
-      if (!event.segs) return;
+    textNodes.forEach((node) => {
+      const start = parseFloat(node.getAttribute("start") || "0");
+      const dur = parseFloat(node.getAttribute("dur") || "0");
 
-      const start = (event.tStartMs || 0) / 1000;
-      const text = event.segs.map(s => s.utf8).join('').replace(/[\r\n]+/g, ' ');
-      const cleaned = cleanText(text);
+      let text = node.textContent;
+      text = cleanText(text); // decode entities and trim
+      if (!text) return;
 
-      if (!cleaned) return;
-
-      fullText += cleaned + " ";
+      fullText += text + " ";
 
       if (start - currentChunkStart > 30 && currentChunkContent.length > 0) {
         chunks.push({
@@ -132,14 +118,12 @@ export const processVideo = async (url) => {
           content: currentChunkContent.trim()
         });
         currentChunkStart = start;
-        currentChunkContent = cleaned + " ";
+        currentChunkContent = text + " ";
       } else {
-        currentChunkContent += cleaned + " ";
+        currentChunkContent += text + " ";
       }
 
-      // Track duration
-      const durationMs = event.dDurationMs || 0;
-      lastEnd = start + (durationMs / 1000);
+      lastEnd = start + dur;
     });
 
     if (currentChunkContent.trim()) {
@@ -148,8 +132,6 @@ export const processVideo = async (url) => {
         content: currentChunkContent.trim()
       });
     }
-
-    console.log(`✅ Transcript processed: ${fullText.length} chars, ${chunks.length} chunks.`);
 
     return {
       text: fullText.trim(),

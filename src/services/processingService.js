@@ -35,13 +35,23 @@ export async function processInput(input) {
             if (input.includes('youtube.com') || input.includes('youtu.be')) {
                 console.log("🎥 Detecting YouTube URL...");
 
-                // Delegate to videoProcessor
-                const videoData = await processVideo(input);
+                try {
+                    // Delegate to videoProcessor
+                    const videoData = await processVideo(input);
 
-                sourceType = 'video';
-                rawText = videoData.text;
-                chunks = videoData.chunks; // chunks are objects {timestamp, content}
-                metadata = videoData.metadata; // { intitle, url, duration }
+                    sourceType = 'video';
+                    rawText = videoData.text;
+                    chunks = videoData.chunks; // chunks are objects {timestamp, content}
+                    metadata = videoData.metadata; // { intitle, url, duration }
+                } catch (videoError) {
+                    // Transcript fetching failed (YouTube blocking, no captions, etc.)
+                    // Fallback: Let AI use Google Search to generate content from the URL
+                    console.warn("⚠️ Video transcript fetch failed. Falling back to AI Search Grounding.", videoError.message);
+                    sourceType = 'video-search';
+                    rawText = input; // Pass the URL itself
+                    chunks = [];
+                    metadata = { url: input, fallbackReason: videoError.message };
+                }
 
             } else {
                 sourceType = 'text';

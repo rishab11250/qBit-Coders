@@ -4,7 +4,7 @@ import Navbar from './components/layout/Navbar';
 import InputHub from './components/InputHub';
 import DashboardLayout from './components/features/DashboardLayout';
 import Background3D from './components/ui/Background3D';
-import { generateStudyContent, fileToBase64 } from './services/aiService';
+import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
 
 const App = () => {
   const { currentStep, setStudyData, setLoading, pdfFile, extractedText, notes, videoUrl, setError, settings } = useStudyStore();
@@ -40,7 +40,12 @@ const App = () => {
       // [NEW] Prioritize Processed Content (Structured)
       const { processedContent } = useStudyStore.getState();
 
-      if (processedContent && processedContent.text) {
+      // [NEW] Google Search Grounding Fallback for blocked YouTube videos
+      if (processedContent && processedContent.sourceType === 'video-search') {
+        console.log("🔍 Transcript unavailable. Using Google Search Grounding...");
+        result = await generateStudyContentWithSearch(processedContent.rawText);
+      }
+      else if (processedContent && processedContent.text) {
         console.log("Generating from Processed Content...");
         // We pass the full processed text to the generator
         result = await generateStudyContent('text', processedContent.text);

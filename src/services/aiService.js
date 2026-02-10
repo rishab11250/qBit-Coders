@@ -308,6 +308,107 @@ export async function generateStudyContent(inputType, content, mimeType = 'appli
 }
 
 /**
+ * Generates study content using Google Search Grounding.
+ * Used as a fallback when transcript fetching fails (e.g., YouTube blocking).
+ * Gemini will search the web for video content and generate a study plan.
+ *
+ * @param {string} videoUrl - The YouTube video URL
+ * @returns {Promise<Object|null>} Structured study data
+ */
+export async function generateStudyContentWithSearch(videoUrl) {
+  const { difficulty, quizCount } = getSettings();
+
+  const systemPrompt = `
+    You are an expert AI Study Coach and Curriculum Designer.
+    The user wants to study a YouTube video, but we could not fetch its transcript directly.
+    You MUST use Google Search to find information about this video's content, then generate a comprehensive study plan.
+
+    **Video URL:** ${videoUrl}
+
+    **Your Task:**
+    1. Search for this video's content, topic, and key points.
+    2. Generate a structured study plan based on what you find.
+
+    **Configuration:**
+    - Difficulty Level: ${difficulty}
+    - Quiz Question Count: ${quizCount}
+
+    **Required Output Format (JSON ONLY):**
+    {
+      "summary": "Start with a 'Simple Explanation' (ELI5 style, 2 sentences). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis.",
+      "topics": ["Topic 1 (Foundation)", "Topic 2 (Core Mechanism)", "Topic 3 (Advanced Application)", "Topic 4 (Future/Edge Cases)"],
+      "concepts": [
+        { 
+          "name": "Main Concept", 
+          "related": ["Prerequisite Concept", "Sub-component", "Real-world Example"] 
+        }
+      ],
+      "quiz": [
+        { 
+          "question": "Scenario-based or conceptual question?", 
+          "answer": "Correct answer with a *concise* explanation of WHY it is correct.", 
+          "topic": "Topic tag",
+          "type": "Conceptual"
+        }
+      ]
+    }
+
+    **Instructions:**
+    - Generate exactly ${quizCount} quiz questions.
+    - Diversity: 30% Fact Recall, 40% Conceptual, 30% Application/Scenario.
+    - Adjust difficulty to '${difficulty}'.
+    
+    **Constraint:** Return ONLY the raw JSON. No markdown formatting (no \`\`\`json wrappers).
+  `;
+
+  try {
+    const response = await executeGeminiRequest({
+      contents: [{ parts: [{ text: systemPrompt }] }],
+      tools: [{ google_search: {} }]
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const candidate = data.candidates?.[0];
+
+    if (!candidate) throw new Error("No response generated.");
+
+    const parts = candidate.content?.parts || [];
+    let textResponse = parts
+      .filter(p => p.text)
+      .map(p => p.text)
+      .join('');
+
+    // Clean markdown formatting
+    textResponse = textResponse.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
+
+    if (!textResponse) {
+      console.error("AI Search returned no text. Candidate:", JSON.stringify(candidate, null, 2));
+      throw new Error("AI Search returned empty text response.");
+    }
+
+    try {
+      return JSON.parse(textResponse);
+    } catch (parseError) {
+      console.error("JSON Parsing Error (Search):", parseError, textResponse);
+      return {
+        summary: "Error parsing AI response.",
+        topics: [],
+        concepts: [],
+        quiz: []
+      };
+    }
+
+  } catch (error) {
+    console.error("AI Search Generation Error:", error);
+    return null;
+  }
+}
+
+/**
  * Low-level function to call Gemini API directly.
  * Useful for intermediate processing steps.
  * 
