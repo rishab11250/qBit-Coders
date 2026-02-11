@@ -128,16 +128,16 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 initial="closed"
                 animate={isOpen ? "open" : "closed"}
                 variants={sidebarVariants}
-                className="fixed left-0 top-20 bottom-0 z-40 border-r border-white/10 bg-black/80 backdrop-blur-2xl flex flex-col shadow-2xl"
+                className="fixed left-0 top-20 bottom-0 z-40 bg-white/[0.05] backdrop-blur-xl border-r border-white/10 flex flex-col shadow-2xl"
             >
                 {/* Header */}
-                <div className="p-5 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-                    <div className="flex items-center justify-between mb-4">
+                <div className="px-4 py-3 border-b border-white/10">
+                    <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2.5">
                             <div className="p-2 bg-violet-500/10 rounded-lg">
-                                <History size={20} className="text-violet-400" />
+                                <History size={18} className="text-violet-400" />
                             </div>
-                            <h3 className="font-bold text-lg text-white tracking-tight">History</h3>
+                            <h3 className="text-sm font-semibold text-white/80 uppercase tracking-wide">History</h3>
                         </div>
                         <button
                             onClick={() => onToggle(false)}
@@ -154,7 +154,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                             placeholder="Search topics..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-4 pr-10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:bg-white/10 transition-all"
+                            className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/40 focus:bg-white/15 focus:outline-none transition-all"
                         />
                         {searchTerm ? (
                             <button
@@ -170,12 +170,12 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 space-y-6 custom-scrollbar">
                     {Object.entries(groupPlansByDate(filteredPlans)).map(([label, plans]) => (
                         plans.length > 0 && (
                             <motion.div key={label} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <h4 className="text-[10px] font-bold text-secondary uppercase tracking-widest mb-3 pl-1 sticky top-0 bg-black/90 backdrop-blur-xl py-1 z-10">{label}</h4>
-                                <div className="space-y-3">
+                                <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2 pl-1 sticky top-0 bg-white/[0.05] backdrop-blur-xl py-1 z-10">{label}</h4>
+                                <div className="space-y-2">
                                     <AnimatePresence mode='popLayout'>
                                         {plans.map((plan) => (
                                             <motion.div
@@ -186,7 +186,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                                 transition={{ duration: 0.2 }}
                                                 onClick={() => loadPlanFromHistory(plan.id)}
-                                                className="group relative p-4 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] hover:from-white/10 hover:to-white/5 border border-white/5 hover:border-violet-500/30 transition-all cursor-pointer shadow-sm hover:shadow-violet-500/10 hover:-translate-y-0.5"
+                                                className="group relative bg-white/5 border border-white/10 rounded-xl p-3 transition-all duration-200 hover:bg-white/10 hover:-translate-y-0.5 cursor-pointer"
                                             >
                                                 <button
                                                     onClick={(e) => {
@@ -213,11 +213,11 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                                     <FileText size={18} />}
                                                     </div>
                                                     <div className="min-w-0 flex-1 pr-6">
-                                                        <h4 className="text-sm font-bold text-gray-100 truncate leading-snug mb-1.5" title={plan.title}>
+                                                        <h4 className="text-sm font-medium text-white truncate leading-snug mb-1.5" title={plan.title}>
                                                             {plan.title.replace(/^"/, '').replace(/"$/, '') || "Untitled Plan"}
                                                         </h4>
-                                                        <div className="flex items-center gap-2 text-[10px] text-secondary font-medium">
-                                                            <span className="bg-white/5 px-2 py-0.5 rounded-md text-secondary/80 border border-white/5">
+                                                        <div className="flex items-center gap-2 text-xs text-white/50 font-medium">
+                                                            <span className="bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
                                                                 {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                             <span className="w-1 h-1 rounded-full bg-white/20"></span>
