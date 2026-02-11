@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 // Valid Gemini models as of 2026 (verified via ListModels API)
-const VALID_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-001'];
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+// Removed slow models: gemini-2.5-pro (thinking model), gemini-2.0-flash-001 (redundant)
+const VALID_MODELS = ['gemini-3-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+const DEFAULT_MODEL = 'gemini-3-flash'; // Fastest model by default
 
 const useStudyStore = create(
     persist(

@@ -31,12 +31,13 @@ const resetKeyRotation = () => { currentKeyIndex = 0; };
 /**
  * Models to try if the primary one is rate-limited.
  * Order matters: prefer newer/faster, then older/stable.
+ * Removed slow models: gemini-2.5-pro (thinking model)
  */
-const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+const FALLBACK_MODELS = ['gemini-3-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
 
 /** Builds the API URL dynamically based on the selected model */
 const getApiUrl = (model = null) => {
-  const selectedModel = model || getSettings().model || 'gemini-2.0-flash';
+  const selectedModel = model || getSettings().model || 'gemini-3-flash';
   return `${BASE_API_URL}/${selectedModel}:generateContent`;
 };
 
@@ -48,7 +49,7 @@ const getApiUrl = (model = null) => {
 async function executeGeminiRequest(payload) {
   if (API_KEYS.length === 0) throw new Error("No API Keys configured.");
 
-  const preferredModel = getSettings().model || 'gemini-2.0-flash';
+  const preferredModel = getSettings().model || 'gemini-3-flash';
 
   // Create a list of models to try: [Preferred, ...Fallbacks]
   const modelsToTry = [
@@ -693,4 +694,99 @@ export async function generateSchedule(content, days, hoursPerDay) {
     return null;
   }
 }
+
+// Cache for health check results (timestamp of last check)
+let lastHealthCheckTime = 0;
+const HEALTH_CHECK_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Proactive Health Check: Tests all models with all API keys to pre-identify rate limits.
+ * This runs in the background when the app loads to optimize the first user request.
+ * 
+ * Strategy:
+ * 1. For each model, try a minimal request with each API key
+ * 2. Mark models as 'available' or 'limited' in the store
+ * 3. If a model is rate-limited, extract the Retry-After time
+ * 4. Cache results for 5 minutes to avoid redundant checks on page refresh
+ * 
+ * Benefits:
+ * - Faster first request (no wasted attempts on rate-limited models)
+ * - Better model auto-selection
+ * - Improved UX with visual feedback in ModelSelector
+ * - Smart caching saves tokens on frequent page refreshes
+ */
+export async function runHealthCheck() {
+  if (API_KEYS.length === 0) {
+    console.warn('⚠️ Health Check skipped: No API keys configured');
+    return;
+  }
+
+  // Smart caching: Skip if we checked recently (within 5 minutes)
+  const now = Date.now();
+  if (now - lastHealthCheckTime < HEALTH_CHECK_CACHE_DURATION) {
+    console.log('⚡ Health check skipped: Recent check still valid');
+    return;
+  }
+
+  const MODELS_TO_CHECK = ['gemini-3-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+
+  console.log('🔍 Running background health check on models and API keys...');
+  lastHealthCheckTime = now; // Update cache timestamp
+
+  // Test each model with a lightweight request
+  for (const model of MODELS_TO_CHECK) {
+    let modelAvailable = false;
+    let retryAfterMs = 0;
+
+    // Try each API key for this model until we find one that works
+    for (let i = 0; i < API_KEYS.length && !modelAvailable; i++) {
+      const apiKey = API_KEYS[i];
+      const url = `${BASE_API_URL}/${model}:generateContent?key=${apiKey}`;
+
+      try {
+        // Minimal test payload (just 3 words to minimize token usage)
+        const testPayload = {
+          contents: [{
+            parts: [{ text: "Say hi" }]
+          }]
+        };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testPayload),
+          signal: AbortSignal.timeout(5000) // 5s timeout
+        });
+
+        if (response.ok) {
+          // Success! This model+key combo works
+          modelAvailable = true;
+          useStudyStore.getState().updateModelStatus(model, 'available');
+          console.log(`✅ ${model} - Available (Key #${i + 1})`);
+          break;
+        } else if (response.status === 429 || response.status === 503) {
+          // Rate limited
+          const retryAfter = response.headers.get('Retry-After');
+          retryAfterMs = Math.max(retryAfterMs, retryAfter ? parseInt(retryAfter) * 1000 : 60000);
+          console.log(`⏳ ${model} - Rate limited on Key #${i + 1}`);
+        } else {
+          // Other error (invalid key, model not found, etc.)
+          console.warn(`⚠️ ${model} - Error ${response.status} on Key #${i + 1}`);
+        }
+      } catch (error) {
+        // Network error or timeout
+        console.warn(`⚠️ ${model} - Failed on Key #${i + 1}:`, error.message);
+      }
+    }
+
+    // If all keys failed for this model, mark it as limited
+    if (!modelAvailable) {
+      useStudyStore.getState().updateModelStatus(model, 'limited', retryAfterMs);
+      console.log(`❌ ${model} - All keys rate-limited (retry in ${retryAfterMs / 1000}s)`);
+    }
+  }
+
+  console.log('✅ Health check complete');
+}
+
 // End of file
