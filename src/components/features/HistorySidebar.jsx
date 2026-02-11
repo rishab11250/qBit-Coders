@@ -128,10 +128,10 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 initial="closed"
                 animate={isOpen ? "open" : "closed"}
                 variants={sidebarVariants}
-                className="fixed left-0 top-20 bottom-0 z-40 dark:bg-[#0B1220] bg-white border-r dark:border-white/10 border-gray-200 flex flex-col shadow-xl"
+                className="fixed left-0 top-20 bottom-0 z-40 bg-white dark:bg-[#0B1220] border-r border-gray-200 dark:border-white/10 rounded-r-2xl flex flex-col shadow-xl"
             >
                 {/* Header */}
-                <div className="px-4 py-3 border-b dark:border-white/10 border-gray-200">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-white/10">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2.5">
                             <div className="p-2 bg-violet-500/10 rounded-lg">
@@ -154,17 +154,17 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                             placeholder="Search topics..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full dark:bg-white/10 bg-gray-100 border dark:border-white/10 border-gray-300 rounded-lg px-3 py-2 text-sm dark:text-white text-gray-900 dark:placeholder:text-white/40 placeholder:text-gray-400 dark:focus:bg-white/15 focus:bg-gray-50 focus:outline-none transition-all"
+                            className="w-full bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/40 focus:bg-gray-50 dark:focus:bg-white/15 focus:outline-none transition-all"
                         />
                         {searchTerm ? (
                             <button
                                 onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/30 text-gray-400 dark:hover:text-white hover:text-gray-700 transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30 hover:text-gray-700 dark:hover:text-white transition-colors"
                             >
                                 <X size={14} />
                             </button>
                         ) : (
-                            <History size={14} className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-white/20 text-gray-400 pointer-events-none" />
+                            <History size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/20 pointer-events-none" />
                         )}
                     </div>
                 </div>
@@ -174,7 +174,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                     {Object.entries(groupPlansByDate(filteredPlans)).map(([label, plans]) => (
                         plans.length > 0 && (
                             <motion.div key={label} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <h4 className="text-[10px] font-bold dark:text-white/50 text-gray-500 uppercase tracking-widest mb-2 pl-1 sticky top-0 dark:bg-[#0B1220] bg-gray-50 py-1 z-10">{label}</h4>
+                                <h4 className="text-[10px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest mb-2 pl-1 sticky top-0 bg-gray-50 dark:bg-[#0B1220] py-1 z-10">{label}</h4>
                                 <div className="space-y-2">
                                     <AnimatePresence mode='popLayout'>
                                         {plans.map((plan) => (
@@ -186,7 +186,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                                 transition={{ duration: 0.2 }}
                                                 onClick={() => loadPlanFromHistory(plan.id)}
-                                                className="group relative dark:bg-white/[0.05] bg-white border dark:border-white/10 border-gray-200 rounded-xl p-3 transition-all duration-200 dark:hover:bg-white/[0.09] hover:bg-gray-100 hover:-translate-y-0.5 cursor-pointer shadow-sm"
+                                                className="group relative bg-white dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 rounded-xl p-3 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-white/[0.09] hover:-translate-y-0.5 cursor-pointer shadow-sm"
                                             >
                                                 <button
                                                     onClick={(e) => {
@@ -195,17 +195,17 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                             deletePlanFromHistory(plan.id);
                                                         }
                                                     }}
-                                                    className="absolute right-3 top-3 p-1.5 dark:text-white/60 text-gray-600 hover:text-rose-500 dark:hover:bg-rose-500/10 hover:bg-rose-100 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
+                                                    className="absolute right-3 top-3 p-1.5 text-gray-600 dark:text-white/60 hover:text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
 
                                                 <div className="flex items-start gap-4">
-                                                    <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border dark:border-white/5 border-black/10 shadow-inner ${plan.inputType === 'multiple-pdf' || plan.inputType === 'pdf' ? 'dark:bg-emerald-500/10 bg-emerald-100 dark:text-emerald-400 text-emerald-700' :
-                                                        plan.inputType === 'images' ? 'dark:bg-cyan-500/10 bg-cyan-100 dark:text-cyan-400 text-cyan-700' :
-                                                            plan.inputType === 'video' || plan.inputType === 'video-search' ? 'dark:bg-rose-500/10 bg-rose-100 dark:text-rose-400 text-rose-700' :
-                                                                'dark:bg-violet-500/10 bg-violet-100 dark:text-violet-400 text-violet-700'
+                                                    <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-gray-200 dark:border-white/5 shadow-inner ${plan.inputType === 'multiple-pdf' || plan.inputType === 'pdf' ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' :
+                                                        plan.inputType === 'images' ? 'bg-cyan-100 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' :
+                                                            plan.inputType === 'video' || plan.inputType === 'video-search' ? 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400' :
+                                                                'bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400'
                                                         }`}>
                                                         {plan.inputType === 'multiple-pdf' || plan.inputType === 'pdf' ? <Upload size={18} /> :
                                                             plan.inputType === 'images' ? <ImageIcon size={18} /> :
@@ -213,14 +213,14 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                                     <FileText size={18} />}
                                                     </div>
                                                     <div className="min-w-0 flex-1 pr-6">
-                                                        <h4 className="text-sm font-medium dark:text-white text-gray-900 truncate leading-snug mb-1.5" title={plan.title}>
+                                                        <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate leading-snug mb-1.5" title={plan.title}>
                                                             {plan.title.replace(/^"/, '').replace(/"$/, '') || "Untitled Plan"}
                                                         </h4>
-                                                        <div className="flex items-center gap-2 text-xs dark:text-white/60 text-gray-600 font-medium">
-                                                            <span className="dark:bg-white/5 bg-gray-200 px-2 py-0.5 rounded-md border dark:border-white/5 border-black/10">
+                                                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-white/60 font-medium">
+                                                            <span className="bg-gray-200 dark:bg-white/5 px-2 py-0.5 rounded-md border border-gray-300 dark:border-white/5">
                                                                 {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
-                                                            <span className="w-1 h-1 rounded-full dark:bg-white/20 bg-gray-400"></span>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-400 dark:bg-white/20"></span>
                                                             <span>{plan.topics?.length || 0} Topics</span>
                                                         </div>
                                                     </div>
