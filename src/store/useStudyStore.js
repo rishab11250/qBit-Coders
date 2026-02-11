@@ -66,6 +66,7 @@ const useStudyStore = create(
                 difficulty: 'Medium',
                 quizCount: 20,
                 theme: 'dark', // Default theme
+                reducedEffects: false, // Toggle 3D background effects
                 // apiKey removed
             },
 
