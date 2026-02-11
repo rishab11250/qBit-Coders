@@ -128,7 +128,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 initial="closed"
                 animate={isOpen ? "open" : "closed"}
                 variants={sidebarVariants}
-                className="fixed left-0 top-20 bottom-0 z-40 dark:bg-white/[0.04] bg-white dark:backdrop-blur-xl border-r dark:border-white/10 border-gray-200 flex flex-col shadow-xl"
+                className="fixed left-0 top-20 bottom-0 z-40 dark:bg-[#0B1220] bg-white border-r dark:border-white/10 border-gray-200 flex flex-col shadow-xl"
             >
                 {/* Header */}
                 <div className="px-4 py-3 border-b dark:border-white/10 border-gray-200">
@@ -174,7 +174,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                     {Object.entries(groupPlansByDate(filteredPlans)).map(([label, plans]) => (
                         plans.length > 0 && (
                             <motion.div key={label} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <h4 className="text-[10px] font-bold dark:text-white/50 text-gray-500 uppercase tracking-widest mb-2 pl-1 sticky top-0 dark:bg-white/[0.05] bg-gray-50 dark:backdrop-blur-xl py-1 z-10">{label}</h4>
+                                <h4 className="text-[10px] font-bold dark:text-white/50 text-gray-500 uppercase tracking-widest mb-2 pl-1 sticky top-0 dark:bg-[#0B1220] bg-gray-50 py-1 z-10">{label}</h4>
                                 <div className="space-y-2">
                                     <AnimatePresence mode='popLayout'>
                                         {plans.map((plan) => (
@@ -216,7 +216,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                         <h4 className="text-sm font-medium dark:text-white text-gray-900 truncate leading-snug mb-1.5" title={plan.title}>
                                                             {plan.title.replace(/^"/, '').replace(/"$/, '') || "Untitled Plan"}
                                                         </h4>
-                                                        <div className="flex items-center gap-2 text-xs dark:text-white/50 text-gray-500 font-medium">
+                                                        <div className="flex items-center gap-2 text-xs dark:text-white/60 text-gray-600 font-medium">
                                                             <span className="dark:bg-white/5 bg-gray-200 px-2 py-0.5 rounded-md border dark:border-white/5 border-black/10">
                                                                 {new Date(plan.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
@@ -234,7 +234,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                     ))}
 
                     {planHistory.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center dark:opacity-40 opacity-60">
+                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                             <History size={48} className="mb-4 dark:text-white/30 text-gray-400 stroke-1" />
                             <p className="text-sm font-medium dark:text-white/60 text-gray-600">No history yet</p>
                             <p className="text-xs dark:text-white/40 text-gray-500 mt-1">Generate a plan to get started</p>
@@ -242,7 +242,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                     )}
 
                     {planHistory.length > 0 && filteredPlans.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center dark:opacity-50 opacity-70">
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                             <p className="text-sm font-medium dark:text-white/60 text-gray-600">No matches found</p>
                             <p className="text-xs dark:text-white/40 text-gray-500 mt-1">Try a different search term</p>
                         </div>
