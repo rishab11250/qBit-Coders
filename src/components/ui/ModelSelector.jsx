@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Star, Brain, Sparkles, ChevronDown, Check, Clock, AlertCircle } from 'lucide-react';
+import { Zap, Star, Brain, Sparkles, ChevronDown, Check, Clock, AlertCircle, Rocket, Feather } from 'lucide-react';
 import useStudyStore from '../../store/useStudyStore';
 
 const ModelSelector = () => {
@@ -42,6 +42,20 @@ const ModelSelector = () => {
 
     const models = [
         {
+            id: 'gemini-3-flash',
+            name: 'Gemini 3 Flash',
+            desc: 'Latest Generation (Fastest)',
+            icon: Rocket,
+            color: 'text-cyan-400'
+        },
+        {
+            id: 'gemini-2.5-flash-lite',
+            name: 'Gemini 2.5 Flash Lite',
+            desc: 'Lightweight (Saves Quota)',
+            icon: Feather,
+            color: 'text-lime-400'
+        },
+        {
             id: 'gemini-2.5-flash',
             name: 'Gemini 2.5 Flash',
             desc: 'Fast & Balanced',
@@ -54,20 +68,6 @@ const ModelSelector = () => {
             desc: 'Stable & Reliable',
             icon: Star,
             color: 'text-violet-400'
-        },
-        {
-            id: 'gemini-2.5-pro',
-            name: 'Gemini 2.5 Pro',
-            desc: 'Smartest (Complex Tasks)',
-            icon: Brain,
-            color: 'text-fuchsia-400'
-        },
-        {
-            id: 'gemini-2.0-flash-001',
-            name: 'Gemini 2.0 Flash 001',
-            desc: 'Pinned Stable Version',
-            icon: Sparkles,
-            color: 'text-yellow-400'
         }
     ];
 

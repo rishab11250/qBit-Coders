@@ -6,7 +6,7 @@ import InputHub from './components/InputHub';
 import DashboardLayout from './components/features/DashboardLayout';
 import Background3D from './components/ui/Background3D';
 import PomodoroTimer from './components/features/PomodoroTimer';
-import { generateStudyContent, generateStudyContentWithSearch, fileToBase64 } from './services/aiService';
+import { generateStudyContent, generateStudyContentWithSearch, fileToBase64, runHealthCheck } from './services/aiService';
 import HistorySidebar from './components/features/HistorySidebar';
 
 const App = () => {
@@ -19,6 +19,13 @@ const App = () => {
   useEffect(() => {
     document.body.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
+
+  // [NEW] Background Health Check: Pre-test all models and API keys
+  // This runs once on app load to identify rate-limited models early
+  useEffect(() => {
+    console.log('🚀 App loaded. Starting background health check...');
+    runHealthCheck(); // Fire and forget - runs in background
+  }, []);
 
   // Decode shared plan from URL hash on mount
   useEffect(() => {
