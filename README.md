@@ -395,10 +395,9 @@ qBit-Coders/
 
 | Member | Role |
 | --- | --- |
-| **Rishab** | Lead Developer, AI Integration and Architecture |
-| **Nikhil** | Frontend Components and UI Design |
-| **Swaraj** | Data Processing and Quiz Engine |
-| **Rituraj** | Dashboard Features and Analytics |
+| **Rishab** | AI Integration + Logic |
+| **Daksh** | File Processing + DataFlow |
+| **Harshit** | UI/UX |
 
 ---
 
