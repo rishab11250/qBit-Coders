@@ -165,12 +165,12 @@ const DashboardLayout = () => {
                                                 <FileText size={18} className="text-violet-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-bold text-primary">Executive Summary</h3>
+                                                <h3 className="text-xl font-semibold text-primary">Executive Summary</h3>
                                                 <p className="text-xs text-secondary mt-0.5">AI-generated overview of your content</p>
                                             </div>
                                         </div>
 
-                                        <div className="glass-panel rounded-3xl p-8 md:p-10 relative overflow-hidden transition-all hover:border-[var(--accent-primary)]/30 duration-500">
+                                        <div className="glass-panel bg-white/[0.05] rounded-3xl p-8 md:p-10 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] hover:border-[var(--accent-primary)]/30">
                                             {/* Ambient glows */}
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/[0.07] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
@@ -247,12 +247,12 @@ const DashboardLayout = () => {
                                     <Share2 size={18} className="text-cyan-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-primary">Knowledge Map</h3>
+                                    <h3 className="text-xl font-semibold text-primary">Knowledge Map</h3>
                                     <p className="text-xs text-secondary mt-0.5">Interactive concept tree</p>
                                 </div>
                             </div>
 
-                            <div className="relative rounded-3xl overflow-hidden border border-cyan-500/10 shadow-lg shadow-cyan-500/5 transition-all hover:border-cyan-500/30">
+                            <div className="relative bg-white/[0.03] rounded-3xl overflow-hidden border border-cyan-500/10 shadow-lg shadow-cyan-500/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] hover:border-cyan-500/30">
                                 <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
                                     <div className="flex items-center gap-2 bg-[var(--bg-secondary)]/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-primary/5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -281,7 +281,7 @@ const DashboardLayout = () => {
                                         <Target size={18} className="text-rose-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-primary">Focus Areas</h3>
+                                        <h3 className="text-xl font-semibold text-primary">Focus Areas</h3>
                                         <p className="text-xs text-secondary mt-0.5">{weakAreas.length} topics identified</p>
                                     </div>
                                 </div>
@@ -290,7 +290,7 @@ const DashboardLayout = () => {
                                     {weakAreas.map((area, i) => (
                                         <div
                                             key={i}
-                                            className="group relative overflow-hidden rounded-2xl bg-[var(--bg-secondary)] border border-rose-500/20 p-5 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-rose-500/10"
+                                            className="group relative overflow-hidden rounded-2xl bg-white/[0.05] border border-rose-500/20 p-5 hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
                                         >
                                             <div className="flex items-start gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
@@ -314,7 +314,7 @@ const DashboardLayout = () => {
                                     <HelpCircle size={18} className="text-amber-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-primary">Interactive Quiz</h3>
+                                    <h3 className="text-xl font-semibold text-primary">Interactive Quiz</h3>
                                     <p className="text-xs text-secondary mt-0.5">Test your understanding</p>
                                 </div>
                             </div>
@@ -334,11 +334,11 @@ const DashboardLayout = () => {
                                     <BarChart3 size={18} className="text-blue-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-primary">Your Progress</h3>
+                                    <h3 className="text-xl font-semibold text-primary">Your Progress</h3>
                                     <p className="text-xs text-secondary mt-0.5">Track your learning journey</p>
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-2xl p-6 md:p-8 transition-all hover:border-blue-500/30">
+                            <div className="glass-panel bg-white/[0.03] rounded-2xl p-6 md:p-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] hover:border-blue-500/30">
                                 <ProgressDashboard />
                             </div>
                         </section>

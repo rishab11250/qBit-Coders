@@ -175,7 +175,7 @@ const InputHub = ({ onGenerate }) => {
             <div className="relative max-w-5xl mx-auto w-full z-10">
 
                 {/* Hero Text */}
-                <div className="text-center mb-12">
+                <div className="text-center mb-8">
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
