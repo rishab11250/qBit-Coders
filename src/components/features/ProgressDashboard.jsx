@@ -79,14 +79,14 @@ const ProgressDashboard = () => {
     return (
         <div ref={containerRef} className="space-y-6">
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-4 gap-5 items-stretch mb-8">
                 {[
-                    { label: 'Plans Generated', value: studyStats.totalPlansGenerated, unit: null, icon: Target, iconColor: 'text-violet-400', iconBg: 'bg-violet-500/10', glow: 'hover:shadow-[0_0_20px_rgba(139,92,246,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
-                    { label: 'Quizzes Taken', value: quizHistory.length, unit: null, icon: Trophy, iconColor: 'text-amber-400', iconBg: 'bg-amber-500/10', glow: 'hover:shadow-[0_0_20px_rgba(245,158,11,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
-                    { label: 'Avg Score', value: avgScore, unit: '%', icon: TrendingUp, iconColor: 'text-teal-400', iconBg: 'bg-teal-500/10', glow: 'hover:shadow-[0_0_20px_rgba(20,184,166,0.35)]', scale: 'hover:scale-[1.02]', valueColor: 'text-primary', labelColor: 'text-secondary' },
-                    { label: 'Study Streak', value: studyStats.studyStreak, unit: studyStats.studyStreak === 1 ? 'day' : 'days', icon: Flame, iconColor: 'text-rose-400', iconBg: 'bg-rose-500/20', glow: 'hover:shadow-[0_0_25px_rgba(244,63,94,0.45)]', scale: 'hover:scale-[1.03]', valueColor: '!text-white', labelColor: '!text-white/70', extraClass: '!opacity-100' }
+                    { label: 'Plans Generated', value: studyStats.totalPlansGenerated, unit: null, icon: Target, iconColor: 'text-violet-400', iconBg: 'bg-violet-500/10', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Quizzes Taken', value: quizHistory.length, unit: null, icon: Trophy, iconColor: 'text-amber-400', iconBg: 'bg-amber-500/10', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Avg Score', value: avgScore, unit: '%', icon: TrendingUp, iconColor: 'text-teal-400', iconBg: 'bg-teal-500/10', valueColor: 'text-primary', labelColor: 'text-secondary' },
+                    { label: 'Study Streak', value: studyStats.studyStreak, unit: studyStats.studyStreak === 1 ? 'day' : 'days', icon: Flame, iconColor: 'text-rose-400', iconBg: 'bg-rose-500/20', valueColor: '!text-white', labelColor: '!text-white/70', extraClass: '!opacity-100' }
                 ].map((stat, i) => (
-                    <div key={i} className={`progress-card rounded-2xl p-6 bg-white/5 backdrop-blur-xl border border-white/10 transition-all duration-300 hover:brightness-110 hover:shadow-lg ${stat.glow} ${stat.scale} ${stat.extraClass || ''} group`}>
+                    <div key={i} className={`progress-card h-full flex flex-col justify-between p-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-300 hover:bg-white/7 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.35)] ${stat.extraClass || ''} group`}>
                         <div className="flex items-center gap-4 mb-4">
                             <div className={`p-3 rounded-xl ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
                                 <stat.icon size={24} className={stat.iconColor} />
