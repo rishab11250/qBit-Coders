@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.env
+*.env
 
 # ytdl-core temp files
 *-player-script.js
