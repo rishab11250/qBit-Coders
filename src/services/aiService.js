@@ -206,13 +206,17 @@ Difficulty: ${difficulty}
 
 Return JSON ONLY (no markdown wrappers):
 {
-  "summary": "2-sentence simple explanation + 3-4 bullet Executive Brief",
+  "summary": {
+    "simple_explanation": "A 2-sentence ELI5-style explanation of the entire material in plain language.",
+    "executive_brief": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3", "Key takeaway 4"]
+  },
   "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4"],
   "concepts": [{"name": "Concept", "related": ["Related1", "Related2"]}],
   "detailed_notes": [{"topic": "Topic", "content": "Markdown notes", "key_points": ["Point1"], "real_world_example": "Example"}]
 }
 
-Keep summary concise. For concepts, focus on structural relationships. For detailed_notes, be thorough but efficient.
+IMPORTANT: "summary" MUST be an object with "simple_explanation" (string) and "executive_brief" (array of 3-6 bullet strings).
+Keep it concise. For concepts, focus on structural relationships. For detailed_notes, be thorough but efficient.
 Return ONLY raw JSON.`;
 
   // Construct payload
@@ -413,7 +417,10 @@ export async function generateStudyContentWithSearch(videoUrl) {
 
     **Required Output Format (JSON ONLY):**
     {
-      "summary": "Start with a 'Simple Explanation' (ELI5 style, 2 sentences). Then, provide a structured 'Executive Brief' (3-4 bullet points) covering the core thesis.",
+      "summary": {
+        "simple_explanation": "A 2-sentence ELI5-style explanation of the video content.",
+        "executive_brief": ["Key takeaway 1", "Key takeaway 2", "Key takeaway 3", "Key takeaway 4"]
+      },
       "topics": ["Topic 1 (Foundation)", "Topic 2 (Core Mechanism)", "Topic 3 (Advanced Application)", "Topic 4 (Future/Edge Cases)"],
       "concepts": [
         { 
