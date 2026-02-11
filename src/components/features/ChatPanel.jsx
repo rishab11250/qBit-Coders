@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, X, MessageSquare, Loader2 } from 'lucide-react';
 import useStudyStore from '../../store/useStudyStore';
-import { sendChatMessage } from '../../services/aiService';
+import { sendChatMessage, streamChatMessage } from '../../services/aiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
@@ -10,6 +10,7 @@ const ChatPanel = ({ isOpen, onClose }) => {
     const {
         chatHistory,
         addChatMessage,
+        updateLastAiMessage,
         isChatLoading,
         setChatLoading,
         extractedText,
@@ -53,20 +54,19 @@ const ChatPanel = ({ isOpen, onClose }) => {
         setChatLoading(true);
 
         try {
-            // 2. Call AI Service
-            // Context: prefer extracted text, fallback to notes
-            // 2. Call AI Service
-            // Context: prefer processedContent (images/pdf), fallback to extractedText/notes
             const context = { extractedText, notes, processedContent };
 
-            // Note: sendChatMessage expects (history, newMessage, context)
-            const reply = await sendChatMessage(chatHistory, userMessage, context);
+            // 2. Add Placeholder AI Message for Streaming
+            addChatMessage({ role: 'ai', content: '' });
 
-            // 3. Add AI Response to Store
-            addChatMessage({ role: 'ai', content: reply });
+            // 3. Stream Response
+            await streamChatMessage(chatHistory, userMessage, context, (text) => {
+                updateLastAiMessage(text);
+            });
+
         } catch (error) {
             console.error("Chat failed:", error);
-            addChatMessage({ role: 'ai', content: "Sorry, I encountered an error. Please try again." });
+            updateLastAiMessage("Sorry, I encountered an error. Please try again.");
         } finally {
             setChatLoading(false);
         }

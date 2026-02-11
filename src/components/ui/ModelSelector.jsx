@@ -42,9 +42,9 @@ const ModelSelector = () => {
 
     const models = [
         {
-            id: 'gemini-3-flash',
-            name: 'Gemini 3 Flash',
-            desc: 'Latest Generation (Fastest)',
+            id: 'gemini-2.0-flash',
+            name: 'Gemini 2.0 Flash',
+            desc: 'Fast & Reliable (Default)',
             icon: Rocket,
             color: 'text-cyan-400'
         },
@@ -58,16 +58,9 @@ const ModelSelector = () => {
         {
             id: 'gemini-2.5-flash',
             name: 'Gemini 2.5 Flash',
-            desc: 'Fast & Balanced',
+            desc: 'Balanced & Capable',
             icon: Zap,
             color: 'text-emerald-400'
-        },
-        {
-            id: 'gemini-2.0-flash',
-            name: 'Gemini 2.0 Flash',
-            desc: 'Stable & Reliable',
-            icon: Star,
-            color: 'text-violet-400'
         }
     ];
 

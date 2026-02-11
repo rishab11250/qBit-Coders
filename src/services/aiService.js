@@ -33,12 +33,13 @@ const resetKeyRotation = () => { currentKeyIndex = 0; };
  * Order matters: prefer newer/faster, then older/stable.
  * Removed slow models: gemini-2.5-pro (thinking model)
  */
-const FALLBACK_MODELS = ['gemini-3-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+const FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
 
 /** Builds the API URL dynamically based on the selected model */
-const getApiUrl = (model = null) => {
-  const selectedModel = model || getSettings().model || 'gemini-3-flash';
-  return `${BASE_API_URL}/${selectedModel}:generateContent`;
+const getApiUrl = (model = null, stream = false) => {
+  const selectedModel = model || getSettings().model || 'gemini-2.0-flash';
+  const action = stream ? 'streamGenerateContent' : 'generateContent';
+  return `${BASE_API_URL}/${selectedModel}:${action}`;
 };
 
 /**
@@ -46,10 +47,10 @@ const getApiUrl = (model = null) => {
  * 1. API Key rotation (tries all keys before giving up)
  * 2. Model fallback on 429 errors
  */
-async function executeGeminiRequest(payload) {
+async function executeGeminiRequest(payload, stream = false) {
   if (API_KEYS.length === 0) throw new Error("No API Keys configured.");
 
-  const preferredModel = getSettings().model || 'gemini-3-flash';
+  const preferredModel = getSettings().model || 'gemini-2.0-flash';
 
   // Create a list of models to try: [Preferred, ...Fallbacks]
   const modelsToTry = [
@@ -65,7 +66,8 @@ async function executeGeminiRequest(payload) {
     for (let keyAttempt = 0; keyAttempt < API_KEYS.length; keyAttempt++) {
       try {
         const apiKey = getNextApiKey();
-        const url = `${getApiUrl(model)}?key=${apiKey}`;
+        const baseUrl = getApiUrl(model, stream);
+        const url = `${baseUrl}?key=${apiKey}${stream ? '&alt=sse' : ''}`;
 
         const response = await fetchWithRetry(url, {
           method: "POST",
@@ -533,9 +535,115 @@ export async function callGemini(systemPrompt, userPrompt, fileData = null) {
  * @param {string} newMessage - The user's new question
  * @param {Object} context - { pdfBase64, extractedText, notes } to provide context
  */
-export async function sendChatMessage(history, newMessage, context) {
-  // executeGeminiRequest handles API Key check internally
 
+/**
+ * Streams a chat message response from the AI.
+ */
+export async function streamChatMessage(history, newMessage, context, onUpdate) {
+  // 1. Build the system instruction / context (Reuse logic)
+  let contextPrompt = "You are a helpful study tutor. Answer questions based on the provided study material.";
+
+  // [Enhanced Context Logic]
+  const historyParts = [];
+
+  // Handle Text/File Context (Same logic as sendChatMessage)
+  if (context.processedContent && context.processedContent.sourceType === 'multiple-pdf' && context.processedContent.fileData) {
+    contextPrompt += "\n\n[System] The user has uploaded multiple PDF documents. Use the visual/text data provided below to answer questions.";
+  }
+  else if (context.processedContent && context.processedContent.text) {
+    const { text, metadata } = context.processedContent;
+    const title = metadata?.title ? `Title: ${metadata.title}\n` : '';
+    contextPrompt += `\n\nStudy Material Context:\n${title}${text.substring(0, 40000)}...`;
+  }
+  // Fallback
+  else if (context.extractedText) {
+    contextPrompt += `\n\nStudy Material Context:\n${context.extractedText.substring(0, 30000)}...`;
+  } else if (context.notes) {
+    contextPrompt += `\n\nNotes Context:\n${context.notes}`;
+  }
+
+  // 2. Format history
+  const formattedHistory = history.map(msg => ({
+    role: msg.role === 'ai' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+
+  try {
+    const payload = {
+      contents: [
+        ...formattedHistory
+      ]
+    };
+
+    const userMessageParts = [];
+
+    // [NEW] Image/PDF Data injection (Same logic as sendChatMessage)
+    if (context.processedContent && context.processedContent.imageData) {
+      context.processedContent.imageData.forEach(img => {
+        userMessageParts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+      });
+      contextPrompt += "\n\n[Context: User uploaded images. Refer to them.]";
+    }
+    if (context.processedContent && context.processedContent.sourceType === 'multiple-pdf' && context.processedContent.fileData) {
+      context.processedContent.fileData.forEach(file => {
+        userMessageParts.push({ inlineData: { mimeType: file.mimeType, data: file.data } });
+      });
+    }
+
+    userMessageParts.push({ text: `${contextPrompt}\n\nStudent Question: ${newMessage}` });
+    payload.contents.push({ role: 'user', parts: userMessageParts });
+
+    // 3. Execute Streaming Request
+    const response = await executeGeminiRequest(payload, true);
+
+    // 4. Read the stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let accumulatedText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line
+
+      for (const line of lines) {
+        if (line.trim().startsWith('data: ')) {
+          const jsonStr = line.trim().slice(6);
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            const chunk = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (chunk) {
+              accumulatedText += chunk;
+              onUpdate(accumulatedText);
+            }
+          } catch (e) {
+            // Check if it's a "UsageMetadata" chunk or keep-alive
+          }
+        }
+      }
+    }
+
+    return accumulatedText;
+
+  } catch (error) {
+    console.error("Streaming Chat Error:", error);
+    onUpdate("Sorry, I encountered an error. Please try again.");
+    return "Error";
+  }
+}
+
+
+/**
+ * Sends a chat message to the AI, maintaining context of the study material.
+ * (Legacy non-streaming version - kept for backward compatibility)
+ */
+export async function sendChatMessage(history, newMessage, context) {
   // 1. Build the system instruction / context
   let contextPrompt = "You are a helpful study tutor. Answer questions based on the provided study material.";
 
@@ -640,6 +748,7 @@ export async function sendChatMessage(history, newMessage, context) {
   }
 }
 
+
 /**
  * Generates a structured study schedule based on material and time constraints.
  * 
@@ -728,7 +837,7 @@ export async function runHealthCheck() {
     return;
   }
 
-  const MODELS_TO_CHECK = ['gemini-3-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+  const MODELS_TO_CHECK = ['gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
 
   console.log('🔍 Running background health check on models and API keys...');
   lastHealthCheckTime = now; // Update cache timestamp
