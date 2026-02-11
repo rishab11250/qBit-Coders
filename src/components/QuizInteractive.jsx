@@ -22,6 +22,7 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     const [selectedCount, setSelectedCount] = useState(5);
     const [quizTotal, setQuizTotal] = useState(5);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     // Feedback State
     const [feedbackState, setFeedbackState] = useState(null); // 'correct' | 'incorrect' | null
@@ -243,294 +244,300 @@ const QuizInteractive = ({ quizData = [], onWeakTopicDetected }) => {
     const timerColor = timeLeft <= 5 ? '#f43f5e' : timeLeft <= 10 ? '#f59e0b' : '#a78bfa';
 
     return (
-        <div className="relative overflow-hidden rounded-3xl bg-black/20 backdrop-blur-xl border border-white/10 shadow-2xl">
-            {/* Background Gradients */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl -z-10 animate-pulse-slow pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -z-10 animate-pulse-slow pointer-events-none" />
-
-            <div className="p-6 md:p-10 min-h-[500px] flex flex-col items-center justify-center relative z-10">
-                <AnimatePresence mode="wait">
-                    {/* START SCREEN */}
-                    {mode === 'start' && (
-                        <motion.div
-                            key="start"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.4, ease: "backOut" }}
-                            className="text-center max-w-lg mx-auto"
-                        >
-                            <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/30 flex items-center justify-center shadow-lg shadow-violet-500/10 backdrop-blur-md">
-                                <Trophy size={42} className="text-violet-400 drop-shadow-lg" />
+        <div className="bg-white/[0.035] backdrop-blur-xl border border-white/10 rounded-2xl p-6 lg:p-7 shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
+            <AnimatePresence mode="wait">
+                {/* START SCREEN */}
+                {mode === 'start' && (
+                    <motion.div
+                        key="start"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.4, ease: "backOut" }}
+                        className="text-center max-w-lg mx-auto"
+                    >
+                        <div className="space-y-4 flex flex-col items-center text-center">
+                            <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                <Trophy size={32} className="text-violet-400" />
                             </div>
 
-                            <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-violet-200 mb-3 tracking-tight">
-                                Knowledge Check
-                            </h3>
-                            <p className="text-secondary/80 text-lg mb-8 leading-relaxed">
-                                AI will generate a fresh quiz tailored to your study material.
-                            </p>
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-bold text-white tracking-tight">
+                                    Knowledge Check
+                                </h3>
+                                <p className="text-white/60 text-sm leading-relaxed">
+                                    AI will generate a fresh quiz tailored to your study material.
+                                </p>
+                            </div>
 
-                            {/* Settings Card */}
-                            <div className="bg-white/5 rounded-2xl p-6 border border-white/5 mb-8 backdrop-blur-sm">
-                                <div className="flex items-center justify-between gap-6 mb-2">
-                                    <span className="text-sm text-secondary font-medium uppercase tracking-wider">Number of Questions</span>
-                                    <div className="relative group">
-                                        <select
-                                            value={selectedCount}
-                                            onChange={(e) => setSelectedCount(Number(e.target.value))}
-                                            className="appearance-none bg-black/40 hover:bg-black/60 text-white font-bold py-2.5 pl-5 pr-10 rounded-xl border border-white/10 focus:outline-none focus:border-violet-500 transition-all cursor-pointer min-w-[100px]"
-                                        >
-                                            {[5, 10, 15, 20].map(n => (
-                                                <option key={n} value={n} className="bg-gray-900">{n}</option>
+                            <div className="flex items-center justify-center gap-2 text-sm">
+                                <span className="text-white/60 text-sm">Questions</span>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                                        className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-lg px-3 py-1.5 text-sm backdrop-blur-md transition-all text-white flex items-center gap-1.5"
+                                    >
+                                        {selectedCount}
+                                        <ChevronDown size={12} className="text-white/50" />
+                                    </button>
+
+                                    {dropdownOpen && (
+                                        <div className="absolute top-9 right-0 w-20 bg-black/80 backdrop-blur-xl border border-white/10 rounded-lg overflow-hidden shadow-xl z-50">
+                                            {[5, 10, 15, 20].map(option => (
+                                                <button
+                                                    key={option}
+                                                    onClick={() => { setSelectedCount(option); setDropdownOpen(false); }}
+                                                    className="w-full text-sm px-3 py-2 hover:bg-white/10 transition-colors text-left text-white"
+                                                >
+                                                    {option}
+                                                </button>
                                             ))}
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none group-hover:text-violet-400 transition-colors" />
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-3 items-center">
                                 <button
                                     onClick={() => startQuiz('all')}
                                     disabled={isGenerating}
-                                    className="group w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-lg shadow-xl shadow-violet-900/20 hover:shadow-violet-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 border border-white/10 flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="group mt-2 w-fit px-7 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(99,102,241,0.45)] transition-all duration-300 text-white flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
-                                    <Zap size={20} /> Generate & Start Quiz <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <Zap size={18} /> Generate & Start Quiz <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
 
                                 {allWeakTopics.length > 0 && quizHistory.length >= 1 && (
                                     <button
                                         onClick={() => startQuiz('weak')}
                                         disabled={isGenerating}
-                                        className="w-full py-4 rounded-xl bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
+                                        className="w-fit px-6 py-2 rounded-lg bg-rose-500/10 text-rose-400 text-sm font-semibold border border-rose-500/20 hover:bg-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        <Target size={18} /> Focus on Weak Areas ({allWeakTopics.length} topics)
+                                        <Target size={16} /> Focus on Weak Areas ({allWeakTopics.length} topics)
                                     </button>
                                 )}
                             </div>
-                        </motion.div>
-                    )}
+                        </div>
+                    </motion.div>
+                )}
 
-                    {/* GENERATING SCREEN */}
-                    {mode === 'generating' && (
-                        <motion.div
-                            key="generating"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="text-center max-w-md mx-auto"
-                        >
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin" />
-                            <h3 className="text-2xl font-bold text-primary mb-2">Crafting Your Quiz...</h3>
-                            <p className="text-secondary text-sm">
-                                Generating {selectedCount} custom questions based on your study material.
-                                {filterMode === 'weak' && <><br /><span className="text-rose-400">Focusing on your weak areas 🎯</span></>}
-                            </p>
-                        </motion.div>
-                    )}
+                {/* GENERATING SCREEN */}
+                {mode === 'generating' && (
+                    <motion.div
+                        key="generating"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-center space-y-5 py-8"
+                    >
+                        <div className="w-16 h-16 mx-auto rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin" />
+                        <h3 className="text-xl font-bold text-white">Crafting Your Quiz...</h3>
+                        <p className="text-white/60 text-sm">
+                            Generating {selectedCount} custom questions based on your study material.
+                            {filterMode === 'weak' && <><br /><span className="text-rose-400">Focusing on your weak areas 🎯</span></>}
+                        </p>
+                    </motion.div>
+                )}
 
-                    {/* ACTIVE QUIZ */}
-                    {mode === 'active' && currentQ && (
-                        <motion.div
-                            key="active"
-                            className="w-full max-w-2xl mx-auto"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                        >
-                            {/* HUD */}
-                            <div className="flex items-center justify-between mb-8 bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Progress</span>
-                                        <span className="text-xl font-black text-white">{currentIndex + 1}<span className="text-base font-medium text-white/30">/{total}</span></span>
-                                    </div>
-                                    <div className="h-10 w-[1px] bg-white/10" />
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Score</span>
-                                        <div className="flex items-center gap-1.5">
-                                            <Award size={16} className="text-yellow-400" />
-                                            <span className="text-xl font-black text-white">{score}</span>
-                                        </div>
+                {/* ACTIVE QUIZ */}
+                {mode === 'active' && currentQ && (
+                    <motion.div
+                        key="active"
+                        className="w-full max-w-2xl mx-auto"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        {/* HUD */}
+                        <div className="flex items-center justify-between mb-8 bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
+                            <div className="flex items-center gap-4">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Progress</span>
+                                    <span className="text-xl font-black text-white">{currentIndex + 1}<span className="text-base font-medium text-white/30">/{total}</span></span>
+                                </div>
+                                <div className="h-10 w-[1px] bg-white/10" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Score</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <Award size={16} className="text-yellow-400" />
+                                        <span className="text-xl font-black text-white">{score}</span>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Streak Badge */}
+                            {/* Streak Badge */}
+                            <AnimatePresence>
+                                {streak > 1 && (
+                                    <motion.div
+                                        initial={{ scale: 0, rotate: -10 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        exit={{ scale: 0 }}
+                                        className="px-3 py-1 bg-orange-500/20 border border-orange-500/40 rounded-full flex items-center gap-1.5"
+                                    >
+                                        <Flame size={14} className="text-orange-500 fill-orange-500 animate-pulse" />
+                                        <span className="text-sm font-bold text-orange-400">{streak} Streak!</span>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Timer */}
+                            <div className="relative w-14 h-14 flex items-center justify-center">
+                                <svg className="w-full h-full -rotate-90" viewBox="0 0 50 50">
+                                    <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                                    <circle
+                                        cx="25" cy="25" r="22" fill="none"
+                                        stroke={timerColor}
+                                        strokeWidth="3"
+                                        strokeLinecap="round"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
+                                    />
+                                </svg>
+                                <span className={`absolute text-sm font-black ${timeLeft <= 5 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>
+                                    {timeLeft}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Question Card */}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentIndex}
+                                initial={{ x: 50, opacity: 0 }}
+                                animate={{
+                                    x: feedbackState === 'incorrect' ? [0, -10, 10, -10, 10, 0] : 0, // Shake animation
+                                    opacity: 1
+                                }}
+                                exit={{ x: -50, opacity: 0 }}
+                                transition={{ duration: 0.3, type: "spring", damping: 25 }}
+                                className={`relative bg-white/5 border backdrop-blur-md rounded-3xl p-8 mb-6 shadow-2xl overflow-hidden
+                                        ${feedbackState === 'correct' ? 'border-emerald-500/50 bg-emerald-500/5 shadow-emerald-500/20' :
+                                        feedbackState === 'incorrect' ? 'border-rose-500/50 bg-rose-500/5 shadow-rose-500/20' : 'border-white/10'}
+                                    `}
+                            >
+                                {/* Topic Badge */}
+                                <div className="flex justify-between items-start mb-6">
+                                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-300 bg-violet-500/10 px-3 py-1.5 rounded-lg border border-violet-500/20 uppercase tracking-wider">
+                                        <Target size={12} /> {currentQ.topic || 'General Knowledge'}
+                                    </span>
+                                    {currentQ.type && (
+                                        <span className="text-[10px] text-secondary font-medium bg-white/5 px-2 py-1 rounded">
+                                            {currentQ.type}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h4 className="text-2xl font-semibold text-white leading-relaxed mb-4">
+                                    {currentQ.question}
+                                </h4>
+
+                                {/* Answer Section */}
                                 <AnimatePresence>
-                                    {streak > 1 && (
+                                    {showAnswer && (
                                         <motion.div
-                                            initial={{ scale: 0, rotate: -10 }}
-                                            animate={{ scale: 1, rotate: 0 }}
-                                            exit={{ scale: 0 }}
-                                            className="px-3 py-1 bg-orange-500/20 border border-orange-500/40 rounded-full flex items-center gap-1.5"
+                                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                                            animate={{ height: "auto", opacity: 1, marginTop: 24 }}
+                                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                                            className="overflow-hidden"
                                         >
-                                            <Flame size={14} className="text-orange-500 fill-orange-500 animate-pulse" />
-                                            <span className="text-sm font-bold text-orange-400">{streak} Streak!</span>
+                                            <div className="p-5 bg-black/30 rounded-2xl border border-white/5 relative">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-l-2xl" />
+                                                <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-2">Correct Answer</p>
+                                                <p className="text-white text-lg leading-relaxed">{currentQ.answer}</p>
+                                            </div>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+                            </motion.div>
+                        </AnimatePresence>
 
-                                {/* Timer */}
-                                <div className="relative w-14 h-14 flex items-center justify-center">
-                                    <svg className="w-full h-full -rotate-90" viewBox="0 0 50 50">
-                                        <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                                        <circle
-                                            cx="25" cy="25" r="22" fill="none"
-                                            stroke={timerColor}
-                                            strokeWidth="3"
-                                            strokeLinecap="round"
-                                            strokeDasharray={circumference}
-                                            strokeDashoffset={strokeDashoffset}
-                                            style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
-                                        />
-                                    </svg>
-                                    <span className={`absolute text-sm font-black ${timeLeft <= 5 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>
-                                        {timeLeft}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Question Card */}
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={currentIndex}
-                                    initial={{ x: 50, opacity: 0 }}
-                                    animate={{
-                                        x: feedbackState === 'incorrect' ? [0, -10, 10, -10, 10, 0] : 0, // Shake animation
-                                        opacity: 1
-                                    }}
-                                    exit={{ x: -50, opacity: 0 }}
-                                    transition={{ duration: 0.3, type: "spring", damping: 25 }}
-                                    className={`relative bg-white/5 border backdrop-blur-md rounded-3xl p-8 mb-6 shadow-2xl overflow-hidden
-                                        ${feedbackState === 'correct' ? 'border-emerald-500/50 bg-emerald-500/5 shadow-emerald-500/20' :
-                                            feedbackState === 'incorrect' ? 'border-rose-500/50 bg-rose-500/5 shadow-rose-500/20' : 'border-white/10'}
-                                    `}
+                        {/* Controls */}
+                        <div className="space-y-4">
+                            {!showAnswer ? (
+                                <button
+                                    onClick={handleReveal}
+                                    className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
                                 >
-                                    {/* Topic Badge */}
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-300 bg-violet-500/10 px-3 py-1.5 rounded-lg border border-violet-500/20 uppercase tracking-wider">
-                                            <Target size={12} /> {currentQ.topic || 'General Knowledge'}
-                                        </span>
-                                        {currentQ.type && (
-                                            <span className="text-[10px] text-secondary font-medium bg-white/5 px-2 py-1 rounded">
-                                                {currentQ.type}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <h4 className="text-2xl font-semibold text-white leading-relaxed mb-4">
-                                        {currentQ.question}
-                                    </h4>
-
-                                    {/* Answer Section */}
-                                    <AnimatePresence>
-                                        {showAnswer && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                                animate={{ height: "auto", opacity: 1, marginTop: 24 }}
-                                                exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <div className="p-5 bg-black/30 rounded-2xl border border-white/5 relative">
-                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-l-2xl" />
-                                                    <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-2">Correct Answer</p>
-                                                    <p className="text-white text-lg leading-relaxed">{currentQ.answer}</p>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            </AnimatePresence>
-
-                            {/* Controls */}
-                            <div className="space-y-4">
-                                {!showAnswer ? (
-                                    <button
-                                        onClick={handleReveal}
-                                        className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-                                    >
-                                        <Eye size={20} /> Reveal Answer
-                                    </button>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {!answeredRef.current[currentIndex] ? (
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <button
-                                                    onClick={() => handleGrade(false)}
-                                                    className="py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-400 font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                                                >
-                                                    <XCircle size={20} /> I Missed It
-                                                </button>
-                                                <button
-                                                    onClick={() => handleGrade(true)}
-                                                    className="py-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400 font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                                                >
-                                                    <CheckCircle size={20} /> I Knew It
-                                                </button>
-                                            </div>
-                                        ) : (
+                                    <Eye size={20} /> Reveal Answer
+                                </button>
+                            ) : (
+                                <div className="space-y-4">
+                                    {!answeredRef.current[currentIndex] ? (
+                                        <div className="grid grid-cols-2 gap-4">
                                             <button
-                                                onClick={nextQuestion}
-                                                className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl text-white font-bold shadow-lg shadow-violet-900/40 hover:shadow-violet-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                onClick={() => handleGrade(false)}
+                                                className="py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-2xl text-rose-400 font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
                                             >
-                                                {currentIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'} <ArrowRight size={20} />
+                                                <XCircle size={20} /> I Missed It
                                             </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* RESULTS SCREEN */}
-                    {mode === 'results' && (
-                        <motion.div
-                            key="results"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5 }}
-                            className="text-center w-full max-w-lg mx-auto"
-                        >
-                            <div className="relative w-40 h-40 mx-auto mb-8">
-                                <svg className="w-full h-full -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                                    <motion.circle
-                                        cx="50" cy="50" r="44" fill="none"
-                                        stroke={score / quizTotal >= 0.7 ? '#10b981' : score / quizTotal >= 0.4 ? '#f59e0b' : '#f43f5e'}
-                                        strokeWidth="8"
-                                        strokeLinecap="round"
-                                        strokeDasharray={2 * Math.PI * 44}
-                                        initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
-                                        animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - score / quizTotal) }}
-                                        transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-4xl font-black text-white tracking-tighter">{Math.round((score / quizTotal) * 100)}%</span>
-                                    <span className="text-xs font-bold text-secondary uppercase tracking-widest mt-1">Accuracy</span>
+                                            <button
+                                                onClick={() => handleGrade(true)}
+                                                className="py-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400 font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                                            >
+                                                <CheckCircle size={20} /> I Knew It
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={nextQuestion}
+                                            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl text-white font-bold shadow-lg shadow-violet-900/40 hover:shadow-violet-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                        >
+                                            {currentIndex + 1 >= total ? 'Finish Quiz' : 'Next Question'} <ArrowRight size={20} />
+                                        </button>
+                                    )}
                                 </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* RESULTS SCREEN */}
+                {mode === 'results' && (
+                    <motion.div
+                        key="results"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-center w-full max-w-lg mx-auto"
+                    >
+                        <div className="relative w-40 h-40 mx-auto mb-8">
+                            <svg className="w-full h-full -rotate-90 drop-shadow-2xl" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                                <motion.circle
+                                    cx="50" cy="50" r="44" fill="none"
+                                    stroke={score / quizTotal >= 0.7 ? '#10b981' : score / quizTotal >= 0.4 ? '#f59e0b' : '#f43f5e'}
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    strokeDasharray={2 * Math.PI * 44}
+                                    initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
+                                    animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - score / quizTotal) }}
+                                    transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-4xl font-black text-white tracking-tighter">{Math.round((score / quizTotal) * 100)}%</span>
+                                <span className="text-xs font-bold text-secondary uppercase tracking-widest mt-1">Accuracy</span>
                             </div>
+                        </div>
 
-                            <h3 className="text-3xl font-bold text-white mb-2">
-                                {score / quizTotal >= 0.9 ? 'Masterful! 🌟' :
-                                    score / quizTotal >= 0.7 ? 'Great Job! 🚀' :
-                                        score / quizTotal >= 0.5 ? 'Good Effort 👍' : 'Keep Practicing 💪'}
-                            </h3>
-                            <p className="text-secondary/80 mb-10">
-                                You correctly answered <strong>{score}</strong> out of <strong>{quizTotal}</strong> questions.
-                            </p>
+                        <h3 className="text-3xl font-bold text-white mb-2">
+                            {score / quizTotal >= 0.9 ? 'Masterful! 🌟' :
+                                score / quizTotal >= 0.7 ? 'Great Job! 🚀' :
+                                    score / quizTotal >= 0.5 ? 'Good Effort 👍' : 'Keep Practicing 💪'}
+                        </h3>
+                        <p className="text-secondary/80 mb-10">
+                            You correctly answered <strong>{score}</strong> out of <strong>{quizTotal}</strong> questions.
+                        </p>
 
-                            <button
-                                onClick={() => setMode('start')}
-                                className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-white font-bold shadow-lg shadow-violet-900/40 hover:shadow-violet-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                            >
-                                <RotateCcw size={18} /> Take Another Quiz
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        <button
+                            onClick={() => setMode('start')}
+                            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl text-white font-bold shadow-lg shadow-violet-900/40 hover:shadow-violet-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                        >
+                            <RotateCcw size={18} /> Take Another Quiz
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
