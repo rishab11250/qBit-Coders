@@ -115,7 +115,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                             e.stopPropagation(); // Prevent immediate close
                             onToggle(true);
                         }}
-                        className="fixed left-4 top-24 z-40 p-3 dark:bg-white/5 bg-gray-100 dark:hover:bg-white/10 hover:bg-gray-200 backdrop-blur-md border dark:border-white/10 border-black/10 rounded-xl text-primary shadow-2xl transition-all hover:scale-105 active:scale-95 group"
+                        className="fixed left-4 top-24 z-40 p-3 dark:bg-white/5 bg-gray-100 dark:hover:bg-white/10 hover:bg-gray-200 dark:backdrop-blur-md border dark:border-white/10 border-gray-300 rounded-xl text-primary shadow-lg transition-all hover:scale-105 active:scale-95 group"
                     >
                         <History size={22} className="group-hover:text-violet-400 transition-colors" />
                     </motion.button>
@@ -128,10 +128,10 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                 initial="closed"
                 animate={isOpen ? "open" : "closed"}
                 variants={sidebarVariants}
-                className="fixed left-0 top-20 bottom-0 z-40 dark:bg-white/[0.04] bg-white backdrop-blur-xl border-r dark:border-white/10 border-black/5 flex flex-col shadow-2xl"
+                className="fixed left-0 top-20 bottom-0 z-40 dark:bg-white/[0.04] bg-white dark:backdrop-blur-xl border-r dark:border-white/10 border-gray-200 flex flex-col shadow-xl"
             >
                 {/* Header */}
-                <div className="px-4 py-3 border-b dark:border-white/10 border-black/10">
+                <div className="px-4 py-3 border-b dark:border-white/10 border-gray-200">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2.5">
                             <div className="p-2 bg-violet-500/10 rounded-lg">
@@ -154,7 +154,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                             placeholder="Search topics..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full dark:bg-white/10 bg-gray-100 border dark:border-white/10 border-black/10 rounded-lg px-3 py-2 text-sm dark:text-white text-gray-800 dark:placeholder:text-white/40 placeholder:text-gray-500 dark:focus:bg-white/15 focus:bg-gray-200 focus:outline-none transition-all"
+                            className="w-full dark:bg-white/10 bg-gray-100 border dark:border-white/10 border-gray-300 rounded-lg px-3 py-2 text-sm dark:text-white text-gray-900 dark:placeholder:text-white/40 placeholder:text-gray-400 dark:focus:bg-white/15 focus:bg-gray-50 focus:outline-none transition-all"
                         />
                         {searchTerm ? (
                             <button
@@ -174,7 +174,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                     {Object.entries(groupPlansByDate(filteredPlans)).map(([label, plans]) => (
                         plans.length > 0 && (
                             <motion.div key={label} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <h4 className="text-[10px] font-bold dark:text-white/50 text-gray-500 uppercase tracking-widest mb-2 pl-1 sticky top-0 dark:bg-white/[0.05] bg-gray-50 backdrop-blur-xl py-1 z-10">{label}</h4>
+                                <h4 className="text-[10px] font-bold dark:text-white/50 text-gray-500 uppercase tracking-widest mb-2 pl-1 sticky top-0 dark:bg-white/[0.05] bg-gray-50 dark:backdrop-blur-xl py-1 z-10">{label}</h4>
                                 <div className="space-y-2">
                                     <AnimatePresence mode='popLayout'>
                                         {plans.map((plan) => (
@@ -186,7 +186,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                                 transition={{ duration: 0.2 }}
                                                 onClick={() => loadPlanFromHistory(plan.id)}
-                                                className="group relative dark:bg-white/[0.05] bg-gray-100 border dark:border-white/10 border-black/10 rounded-xl p-3 transition-all duration-200 dark:hover:bg-white/[0.09] hover:bg-gray-200 hover:-translate-y-0.5 cursor-pointer"
+                                                className="group relative dark:bg-white/[0.05] bg-white border dark:border-white/10 border-gray-200 rounded-xl p-3 transition-all duration-200 dark:hover:bg-white/[0.09] hover:bg-gray-100 hover:-translate-y-0.5 cursor-pointer shadow-sm"
                                             >
                                                 <button
                                                     onClick={(e) => {
@@ -213,7 +213,7 @@ const HistorySidebar = ({ isOpen, onToggle }) => {
                                                                     <FileText size={18} />}
                                                     </div>
                                                     <div className="min-w-0 flex-1 pr-6">
-                                                        <h4 className="text-sm font-medium dark:text-white text-gray-800 truncate leading-snug mb-1.5" title={plan.title}>
+                                                        <h4 className="text-sm font-medium dark:text-white text-gray-900 truncate leading-snug mb-1.5" title={plan.title}>
                                                             {plan.title.replace(/^"/, '').replace(/"$/, '') || "Untitled Plan"}
                                                         </h4>
                                                         <div className="flex items-center gap-2 text-xs dark:text-white/50 text-gray-500 font-medium">
